@@ -109,12 +109,31 @@ export const sendToCRM = async (data, type = 'lead_capture') => {
         // Option 2: Fire Server-Side API Event (Facebook Conversions API)
         // We trigger our Netlify background function to securely send the payload
         try {
+            // Helper to extract cookies for advanced matching (fbp, fbc)
+            const getCookie = (name) => {
+                if (typeof document === 'undefined') return null;
+                const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+                return match ? match[2] : null;
+            };
+
+            const fullName = data.name || data.contactName || '';
+            const nameParts = fullName.trim().split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
             fetch('/.netlify/functions/fb-capi', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email: data.email,
                     phone: data.phone,
+                    firstName: firstName,
+                    lastName: lastName,
+                    city: data.city || '',
+                    state: data.state || '',
+                    zip: data.zipCode || data.zip || '',
+                    fbp: getCookie('_fbp'),
+                    fbc: getCookie('_fbc'),
                     value: enrichedData.value,
                     event_type: type
                 })

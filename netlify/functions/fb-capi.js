@@ -25,6 +25,10 @@ exports.handler = async (event) => {
             return { statusCode: 500, body: JSON.stringify({ error: 'Missing CAPI configuration' }) };
         }
 
+        // Extract Client IP and User Agent from headers
+        const clientIp = event.headers['client-ip'] || event.headers['x-forwarded-for'] || '';
+        const userAgent = event.headers['user-agent'] || '';
+
         // Prepare the payload according to the JSON structure provided by the user
         const payload = {
             data: [
@@ -35,8 +39,16 @@ exports.handler = async (event) => {
                     user_data: {
                         em: body.email ? [hashData(body.email)] : [],
                         ph: body.phone ? [hashData(body.phone.replace(/\D/g, ''))] : [],
-                        // If you have a lead ID, you can pass it here
-                        // lead_id: body.lead_id
+                        fn: body.firstName ? [hashData(body.firstName)] : [],
+                        ln: body.lastName ? [hashData(body.lastName)] : [],
+                        ct: body.city ? [hashData(body.city)] : [],
+                        st: body.state ? [hashData(body.state)] : [],
+                        zp: body.zip ? [hashData(body.zip)] : [],
+                        country: [hashData('us')], // Defaulting to US
+                        client_ip_address: clientIp,
+                        client_user_agent: userAgent,
+                        fbp: body.fbp || undefined,
+                        fbc: body.fbc || undefined
                     },
                     custom_data: {
                         event_source: 'crm',
