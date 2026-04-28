@@ -1,0 +1,138 @@
+
+<style>
+  .faq-wrap { padding: 1rem 0; max-width: 780px; margin: 0 auto; }
+  .faq-header { margin-bottom: 1.5rem; }
+  .faq-header h2 { font-size: 20px; font-weight: 500; margin: 0 0 4px; color: var(--color-text-primary); }
+  .faq-header p { font-size: 14px; color: var(--color-text-secondary); margin: 0; }
+  .faq-item { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); margin-bottom: 8px; overflow: hidden; background: var(--color-background-primary); }
+  .faq-q { width: 100%; background: none; border: none; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; text-align: left; gap: 12px; }
+  .faq-q:hover { background: var(--color-background-secondary); }
+  .faq-q-text { font-size: 15px; font-weight: 500; color: var(--color-text-primary); line-height: 1.4; flex: 1; }
+  .faq-icon { width: 20px; height: 20px; border-radius: 50%; border: 0.5px solid var(--color-border-secondary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.2s; }
+  .faq-icon svg { width: 10px; height: 10px; stroke: var(--color-text-secondary); stroke-width: 2; fill: none; transition: transform 0.2s; }
+  .faq-item.open .faq-icon { background: var(--color-background-info); border-color: var(--color-border-info); }
+  .faq-item.open .faq-icon svg { stroke: var(--color-text-info); transform: rotate(45deg); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .faq-a-inner { padding: 0 20px 16px; font-size: 14px; color: var(--color-text-secondary); line-height: 1.7; border-top: 0.5px solid var(--color-border-tertiary); padding-top: 14px; }
+  .faq-item.open .faq-a { max-height: 400px; }
+  .faq-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: var(--border-radius-md); margin-bottom: 1rem; background: var(--color-background-success); color: var(--color-text-success); font-weight: 500; }
+  .faq-cats { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .cat-btn { font-size: 12px; padding: 4px 12px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: none; color: var(--color-text-secondary); cursor: pointer; }
+  .cat-btn.active { background: var(--color-background-info); color: var(--color-text-info); border-color: var(--color-border-info); }
+  .cat-btn:hover:not(.active) { background: var(--color-background-secondary); }
+</style>
+
+<div class="faq-wrap">
+  <h2 class="sr-only">G&G Cleaning — Frequently Asked Questions</h2>
+  <div class="faq-header">
+    <h2>Frequently Asked Questions</h2>
+    <p>Everything homeowners ask before booking — answered directly.</p>
+  </div>
+
+  <div class="faq-cats">
+    <button class="cat-btn active" onclick="filterFAQ('all', this)">All questions</button>
+    <button class="cat-btn" onclick="filterFAQ('trust', this)">Trust & safety</button>
+    <button class="cat-btn" onclick="filterFAQ('service', this)">Services</button>
+    <button class="cat-btn" onclick="filterFAQ('pricing', this)">Pricing & booking</button>
+    <button class="cat-btn" onclick="filterFAQ('process', this)">How it works</button>
+  </div>
+
+  <div id="faq-list">
+    <div class="faq-item" data-cat="trust">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">Are you insured, bonded, and background-checked?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">Yes. G&G Cleaning is fully insured, bonded, and every team member undergoes a thorough background check before joining our crew. We understand the trust involved in welcoming a cleaning team into your home, and we take that responsibility seriously on every single visit. You can feel completely confident giving us access to your home.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="service">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">Do you bring your own supplies and cleaning products?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">Yes — we bring everything. G&G Cleaning arrives fully equipped with all cleaning supplies, tools, and products needed for your service. We use non-toxic, family-safe, and pet-safe cleaning products on every job. If you have specific product preferences or sensitivities, let us know when booking and we will accommodate accordingly.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="pricing">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">How much does house cleaning cost on Long Island?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">Pricing depends on your home's size, number of bedrooms and bathrooms, service type, and frequency. G&G Cleaning provides transparent upfront pricing — you can get a personalized estimate in under 60 seconds through our instant quote tool. There are no hidden fees and no surprises after the job is done. Most Long Island homeowners find our rates competitive for the quality and consistency we deliver.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="process">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">Do I need to be home during the cleaning?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">No — you do not need to be home. Most of our clients across Nassau and Suffolk County provide access through a key or entry code and return to a completely clean home. Our entire team is insured, bonded, and background-checked, so you can trust us fully with access to your home and your family's belongings.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="service">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">What is the difference between a deep clean and a regular cleaning?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">A regular maintenance cleaning keeps your home looking presentable week after week by cleaning visible surfaces and high-traffic areas. A deep cleaning goes further — it targets built-up grease, soap scum, dust accumulation, and overlooked areas like behind appliances, inside the microwave, exhaust fans, window tracks, and baseboards. Most clients start with a deep clean, then move to bi-weekly maintenance service.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="process">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">Will I get the same cleaning team every visit?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">Yes. We assign the same trained team to your home for every visit. This means your cleaners learn your home, your preferences, and your priorities over time — delivering more consistent, personalized results with each cleaning. Consistency is one of the main reasons Long Island homeowners stay with G&G Cleaning for years.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="pricing">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">How do I book and how quickly can you come?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">You can get an instant quote and book online in under 60 seconds — no phone call required. Simply enter your home details, select your service, and choose your preferred date. Most slots fill 3 to 5 days in advance, so we recommend booking early to secure your preferred time. We serve Nassau and Suffolk County with flexible scheduling built around your lifestyle.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="service">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">Do you offer move-in and move-out cleaning?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">Yes. We provide comprehensive move-in and move-out deep cleaning throughout Long Island, including inside cabinets and drawers, appliance interiors, baseboards, bathrooms, windows, and every room from top to bottom. Our move-in and move-out service ensures your home is completely sanitized and ready — whether you're arriving or leaving.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="trust">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">What if I'm not satisfied with my cleaning?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">Your satisfaction is guaranteed. If you're not completely happy with any area of your cleaning, contact us within 24 hours and we will return to re-clean the area at no additional charge. We stand behind our work and our reputation — and we've built our business since 2008 by making things right when needed.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="process">
+      <button class="faq-q" onclick="toggleFAQ(this)">
+        <span class="faq-q-text">How often should I schedule cleaning for my home?</span>
+        <span class="faq-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner">Most homeowners find bi-weekly cleaning to be the best balance of consistent cleanliness and cost. Larger homes or households with children and pets often benefit from weekly service. Monthly deep cleans work well for those who prefer less frequent visits. We'll recommend the right frequency based on your home's size and your household's lifestyle when you get your quote.</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleFAQ(btn) {
+  const item = btn.closest('.faq-item');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+function filterFAQ(cat, btn) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.style.display = (cat === 'all' || item.dataset.cat === cat) ? 'block' : 'none';
+  });
+}
+</script>

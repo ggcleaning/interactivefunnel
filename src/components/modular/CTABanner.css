@@ -1,0 +1,147 @@
+/* CTABanner.css — Light Purple Theme */
+.cta-banner {
+  padding: 90px 24px;
+  text-align: center;
+}
+
+.cta-banner--dark {
+  background: linear-gradient(135deg, #581c87 0%, #7c3aed 100%);
+}
+
+.cta-banner--gold {
+  background: var(--color-bg-alt, #faf5ff);
+  border-top: 1px solid var(--color-border, #e9d5ff);
+  border-bottom: 1px solid var(--color-border, #e9d5ff);
+}
+
+.cta-banner--light {
+  background: #fff;
+}
+
+.cta-banner__inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.cta-banner__headline {
+  font-family: var(--font-heading, 'Playfair Display', serif);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  line-height: 1.15;
+  color: #fff;
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+}
+
+.cta-banner--gold .cta-banner__headline,
+.cta-banner--light .cta-banner__headline {
+  color: var(--color-primary, #581c87);
+}
+
+.cta-banner__sub {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.82);
+  margin: 0 0 36px;
+  line-height: 1.65;
+}
+
+.cta-banner--gold .cta-banner__sub,
+.cta-banner--light .cta-banner__sub {
+  color: var(--color-text-light, #6b7280);
+}
+
+.cta-banner__btns {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cta-banner__btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-accent, #d4af37);
+  color: #1a0a00;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 14px 30px;
+  border-radius: var(--radius-md, 12px);
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(212,175,55,0.35);
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.cta-banner--gold .cta-banner__btn-primary,
+.cta-banner--light .cta-banner__btn-primary {
+  background: var(--color-secondary, #9333ea);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(147,51,234,0.3);
+}
+
+.cta-banner__btn-primary:hover {
+  background: #e2c04a;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(212,175,55,0.45);
+}
+
+.cta-banner--gold .cta-banner__btn-primary:hover,
+.cta-banner--light .cta-banner__btn-primary:hover {
+  background: var(--color-primary, #581c87);
+}
+
+.cta-banner__btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(88,28,135,0.85);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: var(--radius-md, 12px);
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.cta-banner--gold .cta-banner__btn-secondary,
+.cta-banner--light .cta-banner__btn-secondary {
+  background: transparent;
+  color: var(--color-primary, #581c87);
+  border: 2px solid var(--color-primary, #581c87);
+}
+
+.cta-banner__btn-secondary:hover {
+  background: rgba(255,255,255,0.2);
+  transform: translateY(-2px);
+}
+
+.cta-banner__btn-commercial {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.5);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: var(--radius-md, 12px);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.cta-banner__btn-commercial:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: #fff;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+  .cta-banner { padding: 60px 20px; }
+  .cta-banner__btns { flex-direction: column; align-items: center; }
+  .cta-banner__btn-primary,
+  .cta-banner__btn-secondary,
+  .cta-banner__btn-commercial { width: 100%; justify-content: center; }
+}

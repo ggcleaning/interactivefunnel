@@ -1,0 +1,227 @@
+.before-after-section {
+    padding: var(--spacing-xl) 2rem;
+    background: var(--color-bg-alt);
+    text-align: center;
+}
+
+.slider-container {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    aspect-ratio: 16/9;
+    margin: 0 auto;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-float);
+    cursor: ew-resize;
+    border: 4px solid #fff;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.image-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.image-layer img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.before-image {
+    border-right: 3px solid white;
+    z-index: 10;
+}
+
+.before-image img {
+    object-position: left center;
+}
+
+/* Placeholder Styles */
+.placeholder-clean {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #166534;
+    font-weight: 700;
+    font-size: 1.5rem;
+    font-family: var(--font-heading);
+    text-align: center;
+    padding: 2rem;
+}
+
+.placeholder-dirty {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #92400e;
+    font-weight: 700;
+    font-size: 1.5rem;
+    font-family: var(--font-heading);
+    text-align: center;
+    padding: 2rem;
+}
+
+/* Image Labels */
+.image-label {
+    position: absolute;
+    top: 2rem;
+    padding: 0.5rem 1.5rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    box-shadow: var(--shadow-md);
+    z-index: 5;
+}
+
+.before-label {
+    left: 2rem;
+    color: var(--color-text);
+}
+
+.after-label {
+    right: 2rem;
+    color: var(--color-secondary);
+}
+
+/* Slider Handle */
+.slider-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 50px;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.handle-line {
+    width: 3px;
+    height: 100%;
+    background: white;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.handle-circle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 50px;
+    height: 50px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.slider-container:active .handle-circle {
+    transform: translateY(-50%) scale(1.1);
+}
+
+/* Hint Text */
+.slider-hint {
+    margin-top: 2rem;
+    color: var(--color-text-light);
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .before-after-section {
+        padding: var(--spacing-lg) 1.5rem;
+    }
+
+    .slider-container {
+        max-width: 100%;
+        border-width: 3px;
+    }
+
+    .placeholder-clean,
+    .placeholder-dirty {
+        font-size: 1.1rem;
+        padding: 1rem;
+    }
+
+    .image-label {
+        top: 1rem;
+        padding: 0.4rem 1rem;
+        font-size: 0.75rem;
+    }
+
+    .before-label {
+        left: 1rem;
+    }
+
+    .after-label {
+        right: 1rem;
+    }
+
+    .handle-circle {
+        width: 45px;
+        height: 45px;
+    }
+
+    .slider-hint {
+        font-size: 0.85rem;
+        margin-top: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .before-after-section {
+        padding: var(--spacing-md) 1rem;
+    }
+
+    .slider-container {
+        aspect-ratio: 4/3;
+        border-width: 2px;
+    }
+
+    .placeholder-clean,
+    .placeholder-dirty {
+        font-size: 0.9rem;
+    }
+
+    .image-label {
+        padding: 0.3rem 0.75rem;
+        font-size: 0.7rem;
+    }
+
+    .handle-circle {
+        width: 40px;
+        height: 40px;
+    }
+
+    .handle-line {
+        width: 2px;
+    }
+}

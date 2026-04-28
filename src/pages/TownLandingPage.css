@@ -1,0 +1,295 @@
+/* TownLandingPage.css */
+
+.town-landing-page {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+}
+
+/* Local Hero Section */
+.town-hero {
+  position: relative;
+  padding: 140px 20px 80px;
+  background: var(--gradient-warm);
+  text-align: center;
+  overflow: hidden;
+}
+
+.town-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.town-ai-snippet {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  padding: 24px 32px;
+  border-radius: var(--radius-md);
+  margin: 30px auto;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+  text-align: left;
+}
+
+.town-primary-cta-block {
+  margin: 40px auto 20px;
+  background: #ffffff;
+  border: 2px solid var(--color-secondary);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+}
+
+.cta-benefits {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.cta-benefits li {
+  margin-bottom: 16px;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--color-text);
+}
+
+.cta-btn-large {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-secondary);
+  color: #fff;
+  padding: 18px 36px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-decoration: none;
+  width: 100%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-md);
+  border: none;
+  cursor: pointer;
+}
+
+.cta-btn-large:hover {
+  transform: translateY(-3px);
+  background: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+.town-urgency {
+  margin-top: 18px;
+  font-size: 0.9rem;
+  color: var(--color-secondary);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Pain & Outcome Section */
+.town-section {
+  padding: 100px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.town-pain-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  margin-top: 50px;
+}
+
+.pain-points-list {
+  list-style: none;
+  padding: 0;
+}
+
+.pain-points-list li {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  border-left: 5px solid var(--color-secondary);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  color: var(--color-text);
+}
+
+.pain-outcome {
+  background: var(--color-bg-warm);
+  padding: 50px;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  border: 1px dashed var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.pain-outcome h3 {
+  color: var(--color-primary);
+  margin-bottom: 18px;
+  font-size: 1.6rem;
+}
+
+/* Trust / Authority Section */
+.town-trust-section {
+  background: var(--color-bg-alt);
+}
+
+.town-trust-section.dark {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.town-trust-section.dark h2,
+.town-trust-section.dark p,
+.town-trust-section.dark li {
+  color: #ffffff !important;
+}
+
+.town-trust-content {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.town-trust-text p {
+  font-size: 1.15rem;
+  line-height: 1.8;
+  margin-bottom: 25px;
+  color: var(--color-text);
+}
+
+.trust-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 50px;
+  justify-content: center;
+}
+
+.trust-badge {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  padding: 14px 24px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.trust-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-secondary);
+}
+
+/* Services */
+.town-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 32px;
+  margin-top: 50px;
+}
+
+.town-service-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  padding: 40px 32px;
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.town-service-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--color-secondary);
+  box-shadow: var(--shadow-lg);
+}
+
+.town-service-card h3 {
+  color: var(--color-primary);
+  margin-bottom: 16px;
+  font-size: 1.4rem;
+}
+
+.town-service-card p {
+  color: var(--color-text);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+.service-tip {
+  margin-top: 50px;
+  background: var(--color-bg-warm);
+  padding: 24px 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-left: 6px solid var(--color-secondary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+/* Nearby Areas */
+.town-nearby {
+  background: var(--color-bg-alt);
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 1rem;
+  color: var(--color-text-light);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+  .town-hero {
+    padding: 120px 20px 60px;
+  }
+  
+  .town-hero h1 {
+    font-size: 2.4rem;
+  }
+  
+  .town-ai-snippet {
+    font-size: 1rem;
+    padding: 20px;
+  }
+  
+  .town-pain-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  
+  .town-trust-text p {
+    font-size: 1.1rem;
+  }
+  
+  .trust-stack {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .town-section {
+    padding: 60px 20px;
+  }
+}

@@ -1,0 +1,29 @@
+<svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="premiumPurple" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="#6B3B9C" />
+      <stop offset="40%" stopColor="#4B2372" />
+      <stop offset="100%" stopColor="#2D114A" />
+    </linearGradient>
+    <linearGradient id="premiumGold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stopColor="#B8941E" />
+      <stop offset="50%" stopColor="#D4AF37" />
+      <stop offset="100%" stopColor="#B8941E" />
+    </linearGradient>
+    <linearGradient id="windowGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#E8F4FF" stopOpacity="0.9" />
+      <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.95" />
+      <stop offset="100%" stopColor="#D4E9FF" stopOpacity="0.9" />
+    </linearGradient>
+  </defs>
+  <g>
+    <path d="M 60 25 C 35 25, 15 45, 15 70 C 15 95, 35 115, 60 115 C 70 115, 79 112, 86 107 L 86 85 C 48 90, 35 77, 35 70 C 35 58, 45 45, 60 45 C 81 25, 60 25 Z" fill="url(#premiumPurple)" />
+  </g>
+  <g>
+    <path d="M 140 25 C 165 25, 185 45, 185 70 C 185 95, 165 115, 140 115 C 130 115, 121 112, 114 107 L 114 85 C 152 90, 165 77, 165 70 C 165 58, 155 45, 140 45 C 119 25, 140 25 Z" fill="url(#premiumPurple)" />
+  </g>
+  <g>
+    <rect x="78" y="35" width="44" height="70" rx="3" fill="url(#premiumGold)" />
+    <rect x="82" y="39" width="36" height="62" rx="2" fill="url(#windowGlass)" />
+  </g>
+</svg>

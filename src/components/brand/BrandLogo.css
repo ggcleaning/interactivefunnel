@@ -1,0 +1,144 @@
+.brand-logo {
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+/* --- VARIANTS --- */
+
+/* Horizontal (Default) */
+.brand-logo--horizontal {
+  flex-direction: row;
+  gap: 20px;
+}
+
+/* Stacked */
+.brand-logo--stacked {
+  flex-direction: column;
+  gap: 15px;
+  text-align: center;
+}
+
+.brand-logo--stacked .brand-logo__content {
+  align-items: center;
+}
+
+/* Reverse */
+.brand-logo--reverse {
+  background: #4B2372;
+  padding: 20px 30px;
+  border-radius: 12px;
+}
+
+.brand-logo--reverse .brand-logo__title,
+.brand-logo--reverse .brand-logo__subtitle,
+.brand-logo--reverse .brand-logo__services {
+  color: white !important;
+  -webkit-text-stroke: 0 !important;
+}
+
+.brand-logo--reverse .brand-logo__tagline {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.brand-logo--reverse .brand-logo__line {
+  background: white !important;
+}
+
+/* --- SIZES --- */
+
+.brand-logo--sm .brand-logo__icon {
+  width: 50px;
+  height: 40px;
+}
+.brand-logo--sm .brand-logo__title { font-size: 1.8rem; }
+.brand-logo--sm .brand-logo__subtitle { font-size: 0.6rem; letter-spacing: 0.25em; }
+.brand-logo--sm .brand-logo__services { font-size: 0.4rem; }
+.brand-logo--sm .brand-logo__tagline { font-size: 0.5rem; }
+
+.brand-logo--md .brand-logo__icon {
+  width: 80px;
+  height: 64px;
+}
+.brand-logo--md .brand-logo__title { font-size: 3rem; }
+.brand-logo--md .brand-logo__subtitle { font-size: 0.9rem; letter-spacing: 0.3em; }
+.brand-logo--md .brand-logo__services { font-size: 0.6rem; }
+.brand-logo--md .brand-logo__tagline { font-size: 0.8rem; }
+
+.brand-logo--lg .brand-logo__icon {
+  width: 140px;
+  height: 112px;
+}
+.brand-logo--lg .brand-logo__title { font-size: 5rem; }
+.brand-logo--lg .brand-logo__subtitle { font-size: 1.4rem; letter-spacing: 0.35em; }
+.brand-logo--lg .brand-logo__services { font-size: 0.9rem; }
+.brand-logo--lg .brand-logo__tagline { font-size: 1.2rem; }
+
+/* --- ELEMENTS --- */
+
+.brand-logo__icon {
+  display: flex;
+  align-items: center;
+}
+
+.brand-logo__svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+.brand-logo__content {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-logo__title {
+  font-family: 'Montserrat', serif;
+  font-weight: 700;
+  color: #4B2372;
+  margin: 0;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  -webkit-text-stroke: 1px #D4AF37;
+  paint-order: stroke fill;
+}
+
+.brand-logo__subtitle {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  color: #4B2372;
+  margin: 5px 0 0;
+}
+
+.brand-logo__divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  width: 100%;
+}
+
+.brand-logo__line {
+  height: 1px;
+  flex: 1;
+  background: #D4AF37;
+}
+
+.brand-logo__services {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
+  color: #4B2372;
+  letter-spacing: 0.25em;
+}
+
+.brand-logo__tagline {
+  font-family: 'Great Vibes', cursive;
+  color: #6B6B6B;
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+/* Special Case for Navbar */
+.navbar-logo .brand-logo {
+  gap: 12px;
+}

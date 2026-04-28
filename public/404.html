@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found | G&G Cleaning Services</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Cinzel:wght@600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #4B2372;
+            --color-accent: #D4AF37;
+            --color-text: #1f2937;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #fdfbf7, #ffffff, #faf5ff, #fdfbf7);
+            background-size: 400% 400%;
+            animation: bg 25s ease infinite;
+            color: var(--color-text);
+            text-align: center;
+            padding: 1rem;
+        }
+        @keyframes bg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .container {
+            background: white;
+            padding: 3rem 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(75, 35, 114, 0.1);
+            max-width: 520px;
+            width: 100%;
+        }
+        h1 {
+            font-family: 'Cinzel', serif;
+            font-size: 5rem;
+            color: var(--color-primary);
+            line-height: 1;
+        }
+        .icon { font-size: 2.5rem; margin: 0.75rem 0; }
+        .gold-bar { width: 60px; height: 3px; background: var(--color-accent); margin: 1rem auto; border-radius: 2px; }
+        h2 { font-size: 1.4rem; font-weight: 700; margin: 0.75rem 0 1rem; }
+        p { color: #6b7280; margin-bottom: 2rem; line-height: 1.6; font-size: 0.95rem; }
+        .btn-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            background: var(--color-primary);
+            color: white;
+            padding: 0.9rem 1.8rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(75, 35, 114, 0.3);
+        }
+        .btn:hover { transform: translateY(-2px); background: #3a1a5a; }
+        .btn-outline {
+            background: transparent;
+            color: var(--color-primary);
+            border: 2px solid var(--color-primary);
+            box-shadow: none;
+        }
+        .btn-outline:hover { background: var(--color-primary); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>404</h1>
+        <div class="icon">🧹</div>
+        <div class="gold-bar"></div>
+        <h2>Looks like this page needed a clean sweep.</h2>
+        <p>The page you're looking for doesn't exist or has been moved. Let us get you back on track.</p>
+        <div class="btn-group">
+            <a href="/" class="btn">Back to Home</a>
+            <a href="/services" class="btn btn-outline">See Our Services</a>
+        </div>
+    </div>
+</body>
+</html>

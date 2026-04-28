@@ -1,0 +1,100 @@
+.commercial-quote-page {
+    min-height: 100vh;
+    background: #fcfcfc;
+    padding-bottom: 80px;
+}
+
+.cqp-header {
+    background: #2d1b4d;
+    padding: 100px 0 120px 0;
+    text-align: center;
+    color: #fff;
+    margin-bottom: -60px;
+}
+
+.cqp-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.cqp-badge {
+    display: inline-block;
+    padding: 6px 15px;
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid #d4af37;
+    color: #d4af37;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 25px;
+}
+
+.cqp-header h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    letter-spacing: -1px;
+}
+
+.cqp-header p {
+    font-size: 1.25rem;
+    max-width: 700px;
+    margin: 0 auto;
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
+.cqp-form-section {
+    position: relative;
+    z-index: 10;
+    max-width: 800px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    padding: 20px;
+}
+
+.cqp-footer-info {
+    margin-top: 80px;
+    padding-top: 60px;
+    border-top: 1px solid #eee;
+}
+
+.cqp-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+}
+
+.cqp-info-item h3 {
+    color: #2d1b4d;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+.cqp-info-item p {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .cqp-header {
+        padding: 60px 0 100px 0;
+    }
+    .cqp-header h1 {
+        font-size: 2.2rem;
+    }
+    .cqp-header p {
+        font-size: 1rem;
+    }
+    .cqp-info-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+}

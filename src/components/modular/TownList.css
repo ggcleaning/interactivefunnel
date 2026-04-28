@@ -1,0 +1,46 @@
+.town-list-component {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-top: 20px;
+}
+
+.town-column h4 {
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 8px;
+}
+
+.town-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.town-column li {
+  margin-bottom: 8px;
+}
+
+.town-column a {
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.town-column a:hover {
+  color: var(--color-gold);
+  padding-left: 4px;
+}
+
+@media (max-width: 768px) {
+  .town-list-component {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}

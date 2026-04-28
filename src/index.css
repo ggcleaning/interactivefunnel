@@ -1,0 +1,222 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Cinzel:wght@700&family=Great+Vibes&display=swap');
+
+:root {
+  /* Brand Colors - Premium & Elegant */
+  --color-primary: #4B2372;
+  /* Imperial Purple */
+  --color-secondary: #6B3B9C;
+  /* Vibrant Purple */
+  --color-accent: #D4AF37;
+  /* Champagne Gold */
+
+  /* Neutrals */
+  --color-bg: #ffffff;
+  /* Pure White */
+  --color-bg-alt: #faf5ff;
+  /* Very Light Purple Tint */
+  --color-bg-warm: #fdfbf7;
+  /* Warm Beige/Paper (Keep for warmth) */
+
+  --color-text: #374151;
+  /* Gray 700 - Body Text */
+  --color-text-light: #6b7280;
+  /* Gray 500 - Muted Text */
+  --color-border: #e9d5ff;
+  /* Light Purple Border */
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #9f7aea 0%, #7c3aed 100%);
+  --gradient-warm: linear-gradient(to bottom, #faf5ff, #ffffff);
+
+  /* Typography */
+  --font-heading: 'Outfit', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-accent: 'Great Vibes', cursive;
+  --font-display: 'Cinzel', serif;
+
+  /* Spacing */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 2rem;
+  --spacing-lg: 4rem;
+  --spacing-xl: 6rem;
+
+  /* Rounded */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  /* Shadows - Soft & Clean */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 32px rgba(75, 35, 114, 0.12);
+  --shadow-float: 0 30px 60px rgba(75, 35, 114, 0.15);
+}
+
+/* Reset & Global Cursor */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  cursor: url('/magic-wand.svg') 12 12, auto;
+}
+
+/* Ensure links and buttons retain pointer intent but use custom wand if preferred, 
+   we will keep it as the wand for a consistent magical feel */
+a, button, [role="button"], input[type="submit"] {
+  cursor: url('/magic-wand.svg') 12 12, pointer !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes liveBackground {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+body {
+  font-family: var(--font-body);
+  /* Live Background Gradient moving slowly */
+  background: linear-gradient(-45deg, #fdfbf7, #ffffff, #faf5ff, #fdfbf7);
+  background-size: 400% 400%;
+  animation: liveBackground 25s ease infinite;
+  color: var(--color-text);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  color: var(--color-primary);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+ul {
+  list-style: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+/* Utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-sm);
+}
+
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  min-height: 48px;
+  /* Touch-friendly */
+  background: var(--color-secondary);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-md);
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  background: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  min-height: 48px;
+  /* Touch-friendly */
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-outline:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.btn-outline:active {
+  transform: scale(0.98);
+}
+
+.section-padding {
+  padding: var(--spacing-lg) 0;
+}
+
+.bg-warm {
+  background-color: var(--color-bg-warm);
+}
+
+.bg-alt {
+  background-color: var(--color-bg-alt);
+}
+
+/* ── Utilities ── */
+.u-no-wand, .u-no-wand * {
+  cursor: auto !important;
+}
+
+/* ── Scroll Reveal ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

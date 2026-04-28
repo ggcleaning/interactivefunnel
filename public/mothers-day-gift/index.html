@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mother's Day Gift - G&G Cleaning Service</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --rose-pink: #F4A7B9;
+            --rose-pink-dark: #e895a9;
+            --warm-white: #FFFDF9;
+            --charcoal: #2D2D2D;
+            --gold: #C9A84C;
+            --gold-hover: #b8973b;
+            --light-gray: #f5f3f0;
+            --border-color: #eee;
+            --font-heading: 'Playfair Display', serif;
+            --font-body: 'Inter', sans-serif;
+            --shadow-sm: 0 4px 6px rgba(0,0,0,0.05);
+            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-body);
+            color: var(--charcoal);
+            background-color: var(--warm-white);
+            line-height: 1.6;
+            padding-top: 40px; /* Space for sticky bar */
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--charcoal);
+        }
+
+        /* Sticky Urgency Bar */
+        .urgency-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--rose-pink);
+            color: var(--charcoal);
+            text-align: center;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1000;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 80px 0 60px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255,253,249,1) 0%, rgba(244,167,185,0.15) 100%);
+            position: relative;
+        }
+
+        .hero::before {
+            content: '🌸';
+            position: absolute;
+            font-size: 120px;
+            opacity: 0.05;
+            top: 20px;
+            left: 10%;
+            pointer-events: none;
+        }
+        
+        .hero::after {
+            content: '🌷';
+            position: absolute;
+            font-size: 150px;
+            opacity: 0.05;
+            bottom: 20px;
+            right: 10%;
+            pointer-events: none;
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            margin-bottom: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 30px;
+            color: #4a4a4a;
+            position: relative;
+            z-index: 1;
+        }
+
+        .countdown-container {
+            margin: 30px 0 40px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .countdown-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 80px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--rose-pink);
+        }
+
+        .countdown-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--charcoal);
+            line-height: 1;
+        }
+
+        .countdown-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 16px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-charcoal {
+            background-color: var(--charcoal);
+            color: white;
+        }
+        .btn-charcoal:hover { background-color: #1a1a1a; }
+
+        .btn-rose {
+            background-color: var(--rose-pink);
+            color: var(--charcoal);
+        }
+        .btn-rose:hover { background-color: var(--rose-pink-dark); }
+
+        .btn-gold {
+            background-color: var(--gold);
+            color: white;
+        }
+        .btn-gold:hover { background-color: var(--gold-hover); }
+
+        /* Packages Section */
+        .packages {
+            padding: 80px 0;
+            background-color: white;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .section-header .subtext {
+            font-style: italic;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--warm-white);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-popular {
+            border: 2px solid var(--gold);
+            box-shadow: var(--shadow-md);
+            transform: scale(1.02);
+            background-color: #fffaf0;
+        }
+
+        .card-popular:hover {
+            transform: scale(1.02) translateY(-5px);
+        }
+
+        .badge {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .badge-gold {
+            background-color: var(--gold);
+            color: white;
+        }
+
+        .badge-premium {
+            background-color: var(--charcoal);
+            color: white;
+        }
+
+        .card-emoji {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 5px;
+            font-family: var(--font-body);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .card-price {
+            font-size: 2.5rem;
+            font-family: var(--font-heading);
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--charcoal);
+        }
+
+        .card-desc {
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-style: italic;
+            min-height: 48px;
+        }
+
+        .includes-list {
+            list-style: none;
+            margin-bottom: 30px;
+            flex-grow: 1;
+        }
+
+        .includes-list li {
+            position: relative;
+            padding-left: 25px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .includes-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--rose-pink);
+            font-weight: bold;
+        }
+
+        .card-popular .includes-list li::before {
+            color: var(--gold);
+        }
+
+        .card .btn {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 1rem;
+            margin-top: auto;
+        }
+
+        /* Trust Section */
+        .trust {
+            padding: 80px 0;
+            background-color: var(--light-gray);
+        }
+
+        .trust-list {
+            max-width: 800px;
+            margin: 0 auto;
+            list-style: none;
+        }
+
+        .trust-list li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .trust-icon {
+            color: var(--rose-pink);
+            font-size: 1.5rem;
+            margin-right: 15px;
+            margin-top: -2px;
+        }
+
+        /* Lead Capture Form */
+        .lead-capture {
+            padding: 80px 0;
+            background-color: var(--rose-pink);
+            background-image: radial-gradient(#fff 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .form-card {
+            background: white;
+            max-width: 600px;
+            margin: 0 auto;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+        }
+
+        .form-card h2 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--charcoal);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: var(--font-body);
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--rose-pink);
+            box-shadow: 0 0 0 3px rgba(244,167,185,0.2);
+        }
+
+        .radio-group {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radio-option:hover {
+            background-color: #fcf8f9;
+        }
+
+        .radio-option input[type="radio"] {
+            margin-right: 12px;
+            accent-color: var(--rose-pink);
+            width: 18px;
+            height: 18px;
+        }
+
+        .form-submit-btn {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.2rem;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+
+        .privacy-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 15px;
+            display: block;
+        }
+
+        .success-message {
+            display: none;
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-top: 20px;
+            border: 1px solid #c8e6c9;
+        }
+
+        /* Testimonials */
+        .testimonials {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .quote-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .quote-card {
+            background: var(--warm-white);
+            padding: 30px;
+            border-radius: 12px;
+            position: relative;
+            border-left: 4px solid var(--rose-pink);
+        }
+
+        .quote-icon {
+            font-family: var(--font-heading);
+            font-size: 4rem;
+            color: var(--rose-pink);
+            opacity: 0.2;
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            line-height: 1;
+        }
+
+        .quote-text {
+            font-size: 1.1rem;
+            font-style: italic;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .quote-author {
+            font-weight: 600;
+            color: var(--charcoal);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--charcoal);
+            color: white;
+            text-align: center;
+            padding: 60px 0;
+        }
+
+        .footer p {
+            margin-bottom: 10px;
+            color: #ccc;
+        }
+
+        .footer .phone {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 15px 0;
+            display: block;
+            text-decoration: none;
+        }
+
+        .footer .btn {
+            margin-top: 20px;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr;
+            }
+            .card-popular {
+                transform: none;
+            }
+            .card-popular:hover {
+                transform: translateY(-5px);
+            }
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .countdown-item {
+                min-width: 60px;
+                padding: 10px;
+            }
+            .countdown-number {
+                font-size: 1.5rem;
+            }
+            .quote-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-card {
+                padding: 25px 20px;
+            }
+            .radio-group {
+                grid-template-columns: 1fr;
+            }
+            .hero::before, .hero::after {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sticky Urgency Bar -->
+    <div class="urgency-bar">
+        🌸 Only 8 slots left before Mother's Day &middot; Last booking: Friday, May 8
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Give Mom the Best Mother's Day Gift She'll Actually Remember.</h1>
+            <p>A spotless home. A day completely off. From G&amp;G Cleaning &mdash; Long Island's trusted family-owned cleaning crew.</p>
+            
+            <div class="countdown-container" id="countdown" style="margin: 30px auto; max-width: 600px; display: flex; justify-content: center;">
+                <!-- GHL Countdown Timer -->
+                <script src="https://widgets.leadconnectorhq.com/cdt/remoteEntry.js" timerId=69f0aa794e3c1cf633c4681c position="left" altText="Countdown Timer" data-v2='true'></script>
+            </div>
+
+            <a href="#packages" class="btn btn-rose" onclick="smoothScroll(event, 'packages')">See Mom's Gift Options &rarr;</a>
+        </div>
+    </section>
+
+    <!-- Packages Section -->
+    <section id="packages" class="packages">
+        <div class="container">
+            <div class="section-header">
+                <h2>Choose Mom's Gift</h2>
+                <p class="subtext">All packages include a personalized gift card in her name. She never sees the price.</p>
+            </div>
+
+            <div class="cards-container">
+                <!-- Card 1 -->
+                <div class="card">
+                    <div class="card-emoji">🌷</div>
+                    <h3 class="card-title">The Bouquet</h3>
+                    <div class="card-price">$159</div>
+                    <p class="card-desc">Perfect for apartments &amp; smaller homes</p>
+                    <ul class="includes-list">
+                        <li>2-Hour Home Refresh</li>
+                        <li>Kitchen + Bathrooms + All Floors</li>
+                        <li>Dust all surfaces</li>
+                        <li>Up to 1,500 sq ft</li>
+                        <li>Gift confirmation card included</li>
+                    </ul>
+                    <a href="#booking-form" class="btn btn-charcoal" onclick="selectPackage(event, 'The Bouquet')">Give Mom The Bouquet &rarr;</a>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="card card-popular">
+                    <div class="badge badge-gold">⭐ Most Popular</div>
+                    <div class="card-emoji">🌸</div>
+                    <h3 class="card-title">The Whole Day Off</h3>
+                    <div class="card-price">$249</div>
+                    <p class="card-desc">The gift that makes her feel truly taken care of</p>
+                    <ul class="includes-list">
+                        <li>Full Home Deep Clean (all rooms)</li>
+                        <li>Beds made with fresh linens</li>
+                        <li>Fresh flowers placed in the home</li>
+                        <li>Baseboards + light fixtures</li>
+                        <li>Personalized gift card in mom's name</li>
+                        <li>We text mom her gift message for you</li>
+                        <li>Up to 2,000 sq ft</li>
+                    </ul>
+                    <a href="#booking-form" class="btn btn-rose" style="font-weight: bold;" onclick="selectPackage(event, 'The Whole Day Off')">Send Mom The Whole Day Off &rarr;</a>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="card">
+                    <div class="badge badge-premium">👑 Premium</div>
+                    <div class="card-emoji">👑</div>
+                    <h3 class="card-title">The Royal Treatment</h3>
+                    <div class="card-price">$389</div>
+                    <p class="card-desc">For the mom who deserves everything</p>
+                    <ul class="includes-list">
+                        <li>Everything in The Whole Day Off, PLUS:</li>
+                        <li>Inside oven deep clean</li>
+                        <li>Inside refrigerator clean-out</li>
+                        <li>Interior windows washed</li>
+                        <li>Handwritten card from the G&amp;G team</li>
+                        <li>Priority date selection &mdash; her slot is locked first</li>
+                        <li>Up to 2,500 sq ft</li>
+                    </ul>
+                    <a href="#booking-form" class="btn btn-gold" onclick="selectPackage(event, 'The Royal Treatment')">Give Mom The Royal Treatment &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Section -->
+    <section class="trust">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Families Trust G&amp;G With Mom</h2>
+            </div>
+            <ul class="trust-list">
+                <li>
+                    <span class="trust-icon">✓</span>
+                    <div>Mom never sees the price &mdash; she receives a beautiful gift card</div>
+                </li>
+                <li>
+                    <span class="trust-icon">✓</span>
+                    <div>We call or text mom to coordinate entry &mdash; no key needed from you</div>
+                </li>
+                <li>
+                    <span class="trust-icon">✓</span>
+                    <div>100% Satisfaction Guarantee &mdash; if mom isn't thrilled, we re-clean. Free.</div>
+                </li>
+                <li>
+                    <span class="trust-icon">✓</span>
+                    <div>Family-owned on Long Island &mdash; your mom is in safe, professional hands</div>
+                </li>
+                <li>
+                    <span class="trust-icon">✓</span>
+                    <div>Bilingual crew available (English &amp; Spanish)</div>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Lead Capture Form Section -->
+    <section id="booking-form" class="lead-capture">
+        <div class="container">
+            <div class="form-card">
+                <h2>Reserve Mom's Spot Before It's Gone</h2>
+                <p style="margin-bottom: 25px; color: #666;">Only 8 cleaning slots remaining before Mother's Day</p>
+                
+                <form id="mothersDayForm" onsubmit="submitForm(event)">
+                    <input type="hidden" id="selectedPackage" name="selectedPackage" value="">
+                    
+                    <div class="form-group">
+                        <label for="fullName">Your Name</label>
+                        <input type="text" id="fullName" name="fullName" class="form-control" required placeholder="Enter your full name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Your Phone Number</label>
+                        <input type="tel" id="phone" name="phone" class="form-control" required placeholder="(555) 123-4567">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Preferred Cleaning Date</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="cleaningDate" value="Thursday, May 8" required>
+                                <span>Thursday, May 8</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="cleaningDate" value="Friday, May 9">
+                                <span>Friday, May 9</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="cleaningDate" value="Saturday, May 10 - Morning">
+                                <span>Saturday, May 10 &mdash; Morning</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="cleaningDate" value="Saturday, May 10 - Afternoon">
+                                <span>Saturday, May 10 &mdash; Afternoon</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-charcoal form-submit-btn">Reserve Mom's Spot Now &rarr;</button>
+                    <span class="privacy-text">We'll call you within 2 minutes to confirm. No spam. Ever.</span>
+                </form>
+                
+                <div id="successMessage" class="success-message">
+                    🌸 You're in! We'll call you within 2 minutes to lock in mom's spot.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <h2>What Families Are Saying</h2>
+            </div>
+            
+            <div class="quote-grid">
+                <div class="quote-card">
+                    <div class="quote-icon">"</div>
+                    <p class="quote-text">"I booked The Whole Day Off for my mom last year. She called me crying &mdash; in the best way. This year I'm upgrading to Royal Treatment."</p>
+                    <div class="quote-author">&mdash; Jessica M., Smithtown</div>
+                </div>
+                
+                <div class="quote-card">
+                    <div class="quote-icon">"</div>
+                    <p class="quote-text">"I had no idea what to get her. This was the easiest decision I made all year."</p>
+                    <div class="quote-author">&mdash; Carlos R., Hempstead</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>G&amp;G Cleaning Service &middot; Long Island, NY</h3>
+            <a href="tel:5551234567" class="phone">[INSERT PHONE]</a>
+            <p>Licensed &amp; Insured &middot; Family Owned Since 2008</p>
+            <a href="#booking-form" class="btn btn-rose" onclick="smoothScroll(event, 'booking-form')">Reserve Mom's Spot &rarr;</a>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        // Smooth scrolling function
+        function smoothScroll(e, targetId) {
+            e.preventDefault();
+            const target = document.getElementById(targetId);
+            if (target) {
+                // Offset for sticky bar
+                const headerOffset = 40;
+                const elementPosition = target.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: "smooth"
+                });
+            }
+        }
+
+        // Select package and scroll to form
+        function selectPackage(e, packageName) {
+            smoothScroll(e, 'booking-form');
+            document.getElementById('selectedPackage').value = packageName;
+        }
+
+        // Handle form submission
+        async function submitForm(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const submitBtn = form.querySelector('.form-submit-btn');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = 'Securing spot...';
+            submitBtn.disabled = true;
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Map the form data to GHL's expected fields
+            const ghlPayload = {
+                "Full Name": data.fullName,
+                "Full name": data.fullName,
+                "name": data.fullName,
+                "Phone": data.phone,
+                "Phone number": data.phone,
+                "Phone Number": data.phone,
+                "phone": data.phone,
+                "Preferred Date": data.cleaningDate,
+                "package_selected": data.selectedPackage,
+                "source": "Mothers Day Gift Page",
+                "campaign": "Mothers Day 2026",
+                "tags": ["mothers-day-lead", data.selectedPackage ? `MD-Package-${data.selectedPackage.replace(/\s+/g, '-')}` : '']
+            };
+
+            try {
+                // Pointing to the new Mother's Day workflow webhook
+                const webhookUrl = 'https://services.leadconnectorhq.com/hooks/D5WYnc5CK01FskhJtW3W/webhook-trigger/7948bdc3-bea2-496e-83ff-05447d3df7c3';
+                
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(ghlPayload)
+                });
+                
+                // Hide form and show success message
+                form.style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+            } catch (error) {
+                console.error("Error submitting form:", error);
+                alert("There was an issue reserving your spot. Please call us directly!");
+                
+                // Reset button
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        }
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+/* About Section */
+.about-section {
+    position: relative;
+    padding: var(--spacing-lg) 2rem;
+    overflow: hidden;
+    /* background color removed for image */
+}
+
+.section-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    z-index: 0;
+}
+
+.section-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Reduced opacity from 0.92 to 0.75 so the image is visible */
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.7));
+    z-index: 1;
+}
+
+.about-container {
+    position: relative;
+    z-index: 2;
+    /* ... rest of container styles ... */
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+}
+
+.about-content h2 {
+    font-size: 2.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.about-content p {
+    color: var(--color-text-light);
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+}
+
+.about-image {
+    position: relative;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    aspect-ratio: 4/3;
+    background: var(--color-bg-alt);
+}
+
+.about-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.about-image:hover img {
+    transform: scale(1.02);
+}
+
+.values-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.value-item h4 {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.value-item p {
+    font-size: 0.9rem;
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .about-section {
+        padding: var(--spacing-lg) 1.5rem;
+    }
+
+    .section-bg {
+        background-attachment: scroll;
+        /* Disable parallax on mobile */
+    }
+
+    .about-container {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+
+    .about-content h2 {
+        font-size: 2rem;
+    }
+
+    .values-grid {
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .about-section {
+        padding: var(--spacing-md) 1rem;
+    }
+
+    .about-container {
+        gap: 2rem;
+    }
+
+    .about-content h2 {
+        font-size: 1.75rem;
+    }
+
+    .about-content p {
+        font-size: 1rem;
+    }
+
+    .values-grid {
+        grid-template-columns: 1fr;
+    }
+}
