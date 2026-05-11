@@ -1,13 +1,14 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useConciergeFunnel } from '../hooks/useConciergeFunnel';
 import TrustBar from '../components/modular/TrustBar';
 import CTABanner from '../components/modular/CTABanner';
 import { BUSINESS } from '../data/config';
 import './QuotePage.css';
 
 // Lazy-load heavy components
-const EstimateWidget = lazy(() => import('../components/EstimateWidget'));
+const ConciergeFunnel = lazy(() => import('../components/concierge/ConciergeFunnel').then(module => ({ default: module.ConciergeFunnel })));
 
 const LoadingFallback = () => (
   <div style={{ minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(0,0,0,0.4)' }}>
@@ -45,6 +46,7 @@ const TESTIMONIALS = [
 ];
 
 const QuotePage = () => {
+  const { currentStep } = useConciergeFunnel();
   const [audience, setAudience] = useState('default');
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [exitIntentTriggered, setExitIntentTriggered] = useState(false);
@@ -105,6 +107,8 @@ const QuotePage = () => {
   }
   if (calcStep === 7) ctaText = 'Booking Confirmed!';
 
+  const isConfirmed = currentStep === 'booking-confirmed';
+
   return (
     <div className="quote-funnel-page u-no-wand">
       <Helmet>
@@ -128,166 +132,43 @@ const QuotePage = () => {
       </Helmet>
 
       {/* MAIN LAYOUT SPLIT */}
-      <section className="qf-hero">
-        <div className="container qf-main-grid">
-          {/* LEFT COLUMN: Marketing & Trust */}
-          <div className="qf-main-left">
-            <div className="qf-hero-content">
-              <div className="qf-badge">{copy.badge}</div>
-              <h1 className="qf-title">{copy.headline}</h1>
-              <p className="qf-subtitle">{copy.sub}</p>
-              
-              {/* Desktop-only Trust Row */}
-              <div className="qf-desktop-trust-row desktop-only">
-                <TrustBar items={BUSINESS.trustBadges.slice(0, 5)} variant="light" />
-              </div>
+      <div className="qf-concierge-container">
+        <Suspense fallback={<LoadingFallback />}>
+          <ConciergeFunnel />
+        </Suspense>
+      </div>
 
-              {/* Premium Bullet List */}
-              <div className="qf-marketing-bullets">
-                <div className="qf-bullet">
-                  <span className="qf-bullet-icon">✨</span>
-                  <div>
-                    <strong>100% Satisfaction Guarantee</strong>
-                    <p>If you're not happy, we'll re-clean it for free.</p>
+      {/* SOCIAL PROOF & TRUST */}
+      {!isConfirmed && (
+        <section className="qf-social-proof reveal visible">
+          <div className="container">
+            <TrustBar />
+            <div className="testimonial-grid" style={{ marginTop: '4rem' }}>
+              {TESTIMONIALS.map((t, i) => (
+                <div key={i} className="glass-card testimonial-item animate-concierge-slide" style={{ animationDelay: `${i * 0.2}s` }}>
+                  <p className="t-text" style={{ fontStyle: 'italic', marginBottom: '1rem' }}>{t.text}</p>
+                  <div className="t-meta" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '0.5rem' }}>
+                    <span className="t-name" style={{ fontWeight: 600, display: 'block' }}>{t.name}</span>
+                    <span className="t-loc" style={{ fontSize: '0.85rem', opacity: 0.7 }}>{t.loc}</span>
                   </div>
-                </div>
-                <div className="qf-bullet">
-                  <span className="qf-bullet-icon">🛡️</span>
-                  <div>
-                    <strong>Fully Bonded & Insured</strong>
-                    <p>Your home and belongings are protected.</p>
-                  </div>
-                </div>
-                <div className="qf-bullet">
-                  <span className="qf-bullet-icon">🧺</span>
-                  <div>
-                    <strong>Deep Cleaning Specialists</strong>
-                    <p>We reach the spots most cleaners miss.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* INTEGRATED TESTIMONIALS (Desktop side-by-side) */}
-              <div className="qf-integrated-testimonials desktop-only">
-                <h3 className="qf-micro-title">Long Island Loves G&G</h3>
-                <div className="qf-test-split">
-                  {TESTIMONIALS.slice(0, 2).map((t, i) => (
-                    <div key={i} className="qf-mini-test-card">
-                      <div className="qf-stars">⭐⭐⭐⭐⭐</div>
-                      <p className="qf-mini-test-text">{t.text}</p>
-                      <div className="qf-mini-test-author">
-                        <strong>{t.name}</strong> • {t.loc}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* RIGHT COLUMN: Interactive Form */}
-          <div className="qf-main-right" id="calculator_anchor">
-
-
-            <div className="qf-calc-wrapper">
-              <Suspense fallback={<LoadingFallback />}>
-                <EstimateWidget inline={true} />
-              </Suspense>
-            </div>
-
-
-            {/* Mobile-only Testimonials (stay at bottom on mobile) */}
-            <div className="qf-mobile-testimonials mobile-only">
-               {TESTIMONIALS.slice(0, 1).map((t, i) => (
-                <div key={i} className="qf-mini-test-card">
-                  <div className="qf-stars">⭐⭐⭐⭐⭐</div>
-                  <p className="qf-mini-test-text">{t.text}</p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* POPULAR SERVICES GRID - 2x2 on Desktop */}
-      <section className="qf-categories">
-        <div className="container">
-          <h2 className="qf-section-title">Common Cleaning Categories</h2>
-          <div className="qf-cat-grid">
-            <div className="qf-cat-card">
-              <div className="qf-cat-icon">🧹</div>
-              <h3>Standard Cleaning</h3>
-              <p>Perfect for regular maintenance. Kitchen, bathrooms, and living areas sparkling clean.</p>
-              <div className="qf-cat-actions">
-                <button className="qf-cat-btn" onClick={() => document.getElementById('calculator_anchor').scrollIntoView({ behavior: 'smooth' })}>
-                  Get Price →
-                </button>
-                <Link to="/services" className="qf-cat-btn-outline">More Info</Link>
-              </div>
-            </div>
-            <div className="qf-cat-card">
-              <div className="qf-cat-icon">🧼</div>
-              <h3>Deep Cleaning</h3>
-              <p>Top-to-bottom scrub. Baseboards, vents, and every corner of your home sanitized.</p>
-              <div className="qf-cat-actions">
-                <button className="qf-cat-btn" onClick={() => document.getElementById('calculator_anchor').scrollIntoView({ behavior: 'smooth' })}>
-                  Get Price →
-                </button>
-                <Link to="/services" className="qf-cat-btn-outline">More Info</Link>
-              </div>
-            </div>
-            <div className="qf-cat-card">
-              <div className="qf-cat-icon">🚪</div>
-              <h3>Move-In / Out</h3>
-              <p>The ultimate transition clean. Inside cabinets, ovens, and every square inch spotless.</p>
-              <div className="qf-cat-actions">
-                <button className="qf-cat-btn" onClick={() => document.getElementById('calculator_anchor').scrollIntoView({ behavior: 'smooth' })}>
-                  Get Price →
-                </button>
-                <Link to="/services" className="qf-cat-btn-outline">More Info</Link>
-              </div>
-            </div>
-            <div className="qf-cat-card">
-              <div className="qf-cat-icon">🏢</div>
-              <h3>Commercial</h3>
-              <p>Reliable recurring care for offices, retail shops, and commercial property managers.</p>
-              <div className="qf-cat-actions">
-                <button className="qf-cat-btn" onClick={() => document.getElementById('calculator_anchor').scrollIntoView({ behavior: 'smooth' })}>
-                  Contact Us →
-                </button>
-                <Link to="/commercial" className="qf-cat-btn-outline">More Info</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-
-      {/* STICKY CTA (Mobile only via CSS) */}
-      {calcStep < 3 && (
-        <div className="qf-sticky-cta">
-          <button className="qf-sticky-btn" onClick={() => {
-            document.getElementById('calculator_anchor').scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }}>
-            {ctaText}
-          </button>
-        </div>
+        </section>
       )}
 
+
       {/* EXIT INTENT POPUP */}
-      {showExitIntent && (
+      {showExitIntent && !isConfirmed && (
         <div className="qf-exit-overlay">
-          <div className="qf-exit-modal">
+          <div className="qf-exit-modal glass-card">
             <button className="qf-exit-close" onClick={() => setShowExitIntent(false)}>✕</button>
-            <div className="qf-exit-badge">WAIT! Your clean home is 60s away.</div>
-            <h2 className="qf-exit-title">Claim $40 OFF Your First Cleaning</h2>
-            <p className="qf-exit-desc">Don't miss out! Complete your booking now to secure your $40 Spring Special discount.</p>
-            <div className="qf-exit-code"><strong>Applied automatically at booking</strong></div>
-            <button className="qf-exit-claim" onClick={() => {
-              setShowExitIntent(false);
-              document.getElementById('calculator_anchor').scrollIntoView({ behavior: 'smooth' });
-            }}>
-              Claim Discount & Finish 
+            <div className="qf-exit-badge">GENTLE REMINDER</div>
+            <h2 className="qf-exit-title">Your $40 Gift Awaits</h2>
+            <p className="qf-exit-desc">Complete your concierge inquiry now to secure your $40 First-Time Client credit.</p>
+            <button className="btn-primary" onClick={() => setShowExitIntent(false)} style={{ width: '100%', marginTop: '1.5rem' }}>
+              Return to Concierge
             </button>
           </div>
         </div>

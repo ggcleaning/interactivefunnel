@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { sendToCRM } from '../utils/crm';
 import { trackConversion } from '../utils/metaTracking';
+import { clarityEvent } from '../utils/analytics';
 import { BUSINESS } from '../data/config';
 import './EstimateWidget.css';
 
@@ -82,11 +83,24 @@ const PhotoQuoteFlow = ({ onClose, initialData = {}, inline = false }) => {
 
     const photoStep = step >= 1 && step <= 4 ? PHOTO_STEPS[step - 1] : null;
 
+    // Analytics: Track Step 1 Start
+    useEffect(() => {
+        if (step === 1) {
+            clarityEvent('quote_started', { flow: 'Photo Quote' });
+        }
+    }, [step]);
+
     const handleFileChange = (key, e) => {
         const max = PHOTO_STEPS.find((s) => s.key === key)?.max || 3;
         const newFiles = Array.from(e.target.files).slice(0, max - photos[key].length);
         const newPreviews = newFiles.map((f) => ({ file: f, preview: URL.createObjectURL(f) }));
         setPhotos((prev) => ({ ...prev, [key]: [...prev[key], ...newPreviews].slice(0, max) }));
+        
+        // Track upload
+        if (newFiles.length > 0) {
+            clarityEvent('upload_added', { category: key, count: newFiles.length });
+        }
+
         // Reset input so same file can be re-selected
         e.target.value = '';
     };
@@ -140,6 +154,12 @@ const PhotoQuoteFlow = ({ onClose, initialData = {}, inline = false }) => {
                 content_category: 'Photo Quote Request',
                 content_name: form.serviceType,
                 value: 180 // Baseline quote value
+            });
+
+            // 4. Track Clarity Event
+            clarityEvent('quote_saved', {
+                flow: 'Photo Quote',
+                service: form.serviceType
             });
 
             setStep(6);

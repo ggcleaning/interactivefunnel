@@ -9,7 +9,7 @@ export const BUSINESS = {
   tagline: 'Professional House Cleaning on Long Island Since 2008',
   founded: '2008',
   founderName: 'Griselda Alas',
-  phone: '+1 888-792-2909',
+  phone: '516-298-8323',
   email: 'info@ggcleaningli.com',
   website: 'https://ggcleaningli.com',
   address: {
@@ -291,23 +291,280 @@ export const SERVICE_AREAS = {
   nassau: [
     'Garden City',
     'Manhasset',
-    'Great Neck Estates',
-    'Roslyn Heights',
-    'Old Brookville',
-    'Upper Brookville',
-    'Kensington',
-    'East Hills'
+    'Great Neck',
+    'Roslyn',
+    'Syosset',
+    'Oyster Bay',
+    'Port Washington',
+    'Woodbury',
+    'Old Brookville'
   ],
   suffolk: [
     'Dix Hills',
-    'Huntington Village',
+    'Huntington',
     'Melville',
+    'Commack',
     'Smithtown',
-    'Woodbury',
+    'Northport',
     'Plainview'
   ],
-  general: ['Hempstead', 'Islip', 'Babylon', 'Brookhaven', 'Massapequa', 'Commack']
+  general: ['Hempstead', 'Islip', 'Babylon', 'Brookhaven', 'Massapequa']
 };
+
+// ==================================================================
+//  LOCATION SPECIFIC CONTENT
+// ==================================================================
+export const LOCATIONS = {
+  gardenCity: {
+    name: 'Garden City',
+    county: 'Nassau',
+    headline: 'Premium House Cleaning Services in Garden City',
+    subheadline: 'Garden City homeowners trust G&G Cleaning for immaculate results and a concierge experience. From classic estate maintenance to weekly family home upkeep, we provide the level of detail your home deserves.',
+    description: "G&G Cleaning provides luxury house cleaning in Garden City, NY. Standard, deep, and move-in/out services for Nassau County's finest homes.",
+    faqs: [
+      {
+        question: "What house cleaning services do you offer in Garden City, NY?",
+        answer: "G&G Cleaning offers a full range of residential cleaning services in Garden City, New York, including deep cleaning, recurring weekly and bi-weekly maid service, monthly maintenance cleaning, move-in and move-out cleaning, and post-renovation cleaning. Every service is fully customized based on your home's size, layout, and specific needs."
+      },
+      {
+        question: "Do you clean historic homes and luxury estates in Garden City?",
+        answer: "Yes. Many homes in Garden City — particularly in the Estates Section and along the Cathedral corridor — feature original woodwork and high-end surfaces that require careful handling. Our team is trained to clean historic residences using methods that protect original finishes."
+      }
+    ]
+  },
+  manhasset: {
+    name: 'Manhasset',
+    county: 'Nassau',
+    headline: 'Expert Residential Cleaning in Manhasset',
+    subheadline: 'G&G Cleaning brings a higher standard of clean to Manhasset and the North Shore. Our dedicated crews understand the expectations of busy professionals and active families in the community.',
+    description: "Professional house cleaning in Manhasset, NY. G&G Cleaning offers reliable recurring maid services and deep cleans across the North Shore.",
+    faqs: [
+      {
+        question: "What house cleaning services do you offer in Manhasset, NY?",
+        answer: "G&G Cleaning offers a full range of residential cleaning services in Manhasset, New York, including deep cleaning, recurring weekly and bi-weekly maid service, monthly maintenance cleaning, move-in and move-out cleaning, and post-renovation cleaning. Every service is fully customized based on your home's size, layout, and specific needs."
+      },
+      {
+        question: "Do you clean historic homes and luxury estates in Manhasset?",
+        answer: "Yes. Many homes in Manhasset feature custom stonework, original moldings, and high-end surfaces that require careful handling. Our team is trained to clean historic and high-end residences using methods that protect original finishes while delivering a thorough clean."
+      },
+      {
+        question: "Do you serve Plandome, Flower Hill, and the Strathmores?",
+        answer: "Absolutely. We regularly clean homes throughout all Manhasset neighborhoods including Plandome, Flower Hill, Strathmore, Strathmore-Vanderbilt, and surrounding residential streets."
+      }
+    ]
+  },
+  dixHills: {
+    name: 'Dix Hills',
+    county: 'Suffolk',
+    headline: 'Dix Hills’ Most Trusted Home Cleaning Service',
+    subheadline: 'Keep your Dix Hills estate pristine without the stress. G&G Cleaning provides reliable, high-end cleaning services tailored to the needs of Suffolk County’s most discerning homeowners.',
+    description: "Trusted house cleaning in Dix Hills, NY. Deep cleaning, weekly maintenance, and specialized move-out services for Suffolk County residents.",
+    faqs: [
+      {
+        question: "What house cleaning services do you offer in Dix Hills, NY?",
+        answer: "G&G Cleaning offers a full range of residential cleaning services in Dix Hills, including deep cleaning, recurring weekly and bi-weekly maid service, monthly maintenance cleaning, and move-in/move-out cleaning tailored to Suffolk County's large estates."
+      },
+      {
+        question: "Do you specialize in cleaning large homes in Dix Hills?",
+        answer: "Yes. Many Dix Hills homes exceed 3,000–5,000 square feet. Our team is specifically trained to clean large residences systematically, ensuring nothing is rushed or overlooked while protecting high-end materials."
+      }
+    ]
+  },
+  huntington: {
+    name: 'Huntington',
+    county: 'Suffolk',
+    headline: 'Professional House Cleaning in Huntington',
+    subheadline: 'From Huntington Village to the hills of Lloyd Harbor, G&G Cleaning provides the reliable, high-quality cleaning services that Huntington families have trusted for over 15 years.',
+    description: "Expert house cleaning services in Huntington, NY. We offer deep cleans, recurring maid services, and move-in/out cleaning for all Huntington neighborhoods.",
+    faqs: [
+      {
+        question: "Do you serve Huntington Station and South Huntington as well?",
+        answer: "Yes, G&G Cleaning proudly serves the entire Huntington area, including Huntington Village, Huntington Station, South Huntington, Lloyd Harbor, and Cold Spring Harbor."
+      },
+      {
+        question: "Can I book a same-day cleaning in Huntington?",
+        answer: "While we recommend booking 48 hours in advance, we often have last-minute openings in the Huntington area. Use our online calculator to check real-time availability."
+      }
+    ]
+  },
+  syosset: {
+    name: 'Syosset',
+    county: 'Nassau',
+    headline: 'Top-Rated Maid Service in Syosset',
+    subheadline: 'Syosset families lead busy lives. Let G&G Cleaning handle the housework so you can enjoy your time. Professional, insured, and family-owned since 2008.',
+    description: "Reliable house cleaning in Syosset, NY. G&G Cleaning provides deep cleaning and recurring maintenance for Syosset homeowners.",
+    faqs: [
+      {
+        question: "Are your cleaners background-checked for Syosset homes?",
+        answer: "Absolutely. Every member of our team is vetted, background-checked, and fully insured, giving you total peace of mind when we enter your Syosset residence."
+      }
+    ]
+  },
+  roslyn: {
+    name: 'Roslyn',
+    county: 'Nassau',
+    headline: 'Luxury Home Cleaning in Roslyn',
+    subheadline: 'G&G Cleaning specializes in the high-end residential cleaning Roslyn residents expect. Detailed, discreet, and dedicated to perfection in every room.',
+    description: "Premium house cleaning services in Roslyn, NY. Specialized deep cleaning and maintenance for Roslyn and Roslyn Heights estates.",
+    faqs: [
+      {
+        question: "Do you clean high-end finishes and custom materials common in Roslyn homes?",
+        answer: "Yes. Our team is trained to handle marble, quartz, custom hardwood, and high-end fixtures with the specific care they require, using safe and effective cleaning methods."
+      }
+    ]
+  },
+  oysterBay: {
+    name: 'Oyster Bay',
+    county: 'Nassau',
+    headline: 'Oyster Bay’s Local Cleaning Experts',
+    subheadline: 'We bring a personal touch to every home in Oyster Bay. Our family-owned business treats your home with the same care and respect we give our own.',
+    description: "Professional house cleaning in Oyster Bay, NY. G&G Cleaning offers reliable recurring maid services and deep cleans.",
+    faqs: [
+      {
+        question: "How long have you been serving the Oyster Bay community?",
+        answer: "G&G Cleaning has been serving Long Island homeowners, including those in Oyster Bay, since 2008."
+      }
+    ]
+  },
+  portWashington: {
+    name: 'Port Washington',
+    county: 'Nassau',
+    headline: 'Reliable House Cleaning in Port Washington',
+    subheadline: 'Port Washington residents trust G&G Cleaning for consistent, high-quality results. Whether you need a one-time deep clean or weekly service, we make it easy.',
+    description: "Expert home cleaning in Port Washington, NY. Deep cleaning and recurring service options tailored to your lifestyle.",
+    faqs: []
+  },
+  greatNeck: {
+    name: 'Great Neck',
+    county: 'Nassau',
+    headline: 'Great Neck’s Premier Cleaning Service',
+    subheadline: 'Exceptional cleaning for Great Neck estates and residences. We provide a level of detail and reliability that stands out in the community.',
+    description: "High-end house cleaning in Great Neck, NY. G&G Cleaning offers deep cleaning and recurring maintenance for discerning homeowners.",
+    faqs: []
+  },
+  woodbury: {
+    name: 'Woodbury',
+    county: 'Nassau',
+    headline: 'Professional Maid Service in Woodbury',
+    subheadline: 'Keep your Woodbury home beautiful with G&G Cleaning. Our professional teams are trained to deliver a spotless result every single time.',
+    description: "Top-rated house cleaning in Woodbury, NY. Deep cleaning and weekly maid services available.",
+    faqs: []
+  },
+  melville: {
+    name: 'Melville',
+    county: 'Suffolk',
+    headline: 'Melville Home Cleaning You Can Count On',
+    subheadline: 'G&G Cleaning provides Melville homeowners with a stress-free cleaning experience. Reliable, professional, and thorough.',
+    description: "Reliable residential cleaning in Melville, NY. We offer deep cleaning and recurring maintenance services.",
+    faqs: []
+  },
+  commack: {
+    name: 'Commack',
+    county: 'Suffolk',
+    headline: 'Commack’s Local House Cleaning Team',
+    subheadline: 'Quality cleaning services right in your neighborhood. Commack families trust G&G Cleaning for all their home maintenance needs.',
+    description: "Professional house cleaning in Commack, NY. G&G Cleaning offers reliable deep cleaning and recurring maid services.",
+    faqs: []
+  },
+  smithtown: {
+    name: 'Smithtown',
+    county: 'Suffolk',
+    headline: 'Expert House Cleaning in Smithtown',
+    subheadline: 'G&G Cleaning brings over 15 years of experience to Smithtown homes. Let our family take care of yours with a premium clean.',
+    description: "Trusted home cleaning in Smithtown, NY. Deep cleaning and recurring service options for all Smithtown residents.",
+    faqs: []
+  }
+};
+
+// ==================================================================
+//  DEEP CLEANING CHECKLIST
+// ==================================================================
+export const CHECKLIST = [
+  {
+    category: 'Kitchen',
+    icon: '🍳',
+    count: '11 Areas',
+    items: [
+      'Clean and sanitize all countertops and backsplash',
+      'Clean exterior of all cabinets and drawers',
+      'Sanitize sink, polish faucet and fixtures',
+      'Degrease stovetop, burners, and range hood',
+      'Clean exterior of all appliances',
+      'Clean inside microwave completely',
+      'Wipe down and sanitize small appliances',
+      'Clean behind and under reachable appliances',
+      'Vacuum and mop all floors including edges',
+      'Wipe interior and exterior of oven door',
+      'Spot clean reachable interior cabinet areas',
+    ]
+  },
+  {
+    category: 'Bathrooms',
+    icon: '🚿',
+    count: '10 Areas',
+    items: [
+      'Scrub and disinfect toilets inside and out',
+      'Clean and sanitize sinks and countertops',
+      'Polish mirrors and all glass surfaces',
+      'Scrub showers and tubs, remove soap scum',
+      'Clean tile and grout thoroughly',
+      'Polish all fixtures and hardware',
+      'Clean exhaust fans and vents',
+      'Mop floors including corners and behind toilet',
+      'Wipe door frames, handles, and switches',
+      'Empty and sanitize wastebaskets',
+    ]
+  },
+  {
+    category: 'Bedrooms',
+    icon: '🛏️',
+    count: '8 Areas',
+    items: [
+      'Dust all furniture, nightstands, and dressers',
+      'Clean mirrors and all glass surfaces',
+      'Dust light fixtures and ceiling fans',
+      'Dust baseboards and window sills',
+      'Dust blinds and reachable window tracks',
+      'Vacuum under beds and all reachable floor areas',
+      'Vacuum carpets and rugs / mop hard floors',
+      'Make beds upon request',
+    ]
+  },
+  {
+    category: 'Living Areas',
+    icon: '🛋️',
+    count: '8 Areas',
+    items: [
+      'Dust all furniture, shelves, and electronics',
+      'Clean glass tables and surfaces',
+      'Dust baseboards and door frames throughout',
+      'Clean light fixtures and ceiling fans',
+      'Remove cobwebs and dust vents',
+      'Vacuum carpets and rugs / mop hard floors',
+      'Wipe all light switches and outlet covers',
+      'Straighten cushions and general tidying',
+    ]
+  }
+];
+
+export const DEEP_CLEAN_FAQS = [
+  {
+    question: "What is included in a professional deep house cleaning?",
+    answer: "A professional deep house cleaning covers every major area of your home at a level beyond standard maintenance cleaning. At G&G Cleaning, our deep clean includes full kitchen degreasing, appliance cleaning, bathroom scrubbing, grout cleaning, dusting baseboards, vents, ceiling fans, and a complete whole-home detail pass."
+  },
+  {
+    question: "How is a deep cleaning different from a regular cleaning?",
+    answer: "A regular cleaning keeps your home presentable. A deep cleaning targets built-up grease, soap scum, dust accumulation, and overlooked areas like behind appliances, exhaust fans, window tracks, and baseboards. It's a full reset for your home."
+  },
+  {
+    question: "How long does a deep cleaning take for a Long Island home?",
+    answer: "For most 3 to 4 bedroom homes on Long Island, a professional deep clean takes between 4 and 8 hours depending on size and condition. Larger estates in Garden City or Manhasset may require more time."
+  },
+  {
+    question: "Do I need to be home during the deep cleaning?",
+    answer: "No. Most clients provide access via a key or code. Our team is fully insured, bonded, and background-checked, so you can trust us with your home."
+  }
+];
 
 // ==================================================================
 //  FAQ ENGINE (ANSWER ENGINE READINESS)

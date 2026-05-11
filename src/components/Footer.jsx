@@ -122,6 +122,9 @@ const Footer = ({ onOpenPrivacy, onOpenTerms, onOpenEstimate }) => {
 
       <div className="copyright">
         &copy; {new Date().getFullYear()} {BUSINESS.name}. All rights reserved.
+        <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '8px', maxWidth: '600px', margin: '8px auto 0' }}>
+          We improve our products and advertising by using Microsoft Clarity to see how you use our website. By using our site, you agree that we and Microsoft can collect and use this data.
+        </div>
       </div>
     </footer>
   );

@@ -1,17 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { SERVICE_AREAS } from '../../data/config';
+import { SERVICE_AREAS, LOCATIONS } from '../../data/config';
 import './TownList.css';
 
 const TownList = () => {
-  const getTownLink = (town) => {
-    // Map specific towns to their SEO landing pages
-    const slugMap = {
-      'Garden City': '/locations/garden-city',
-      'Manhasset': '/locations/manhasset',
-      'Dix Hills': '/locations/dix-hills',
-    };
-    return slugMap[town] || '/quote';
+  // Helper to find the slug for a given town name
+  const getTownLink = (townName) => {
+    const entry = Object.entries(LOCATIONS).find(([key, data]) => data.name === townName);
+    if (entry) {
+      // Convert camelCase key to kebab-case slug
+      const slug = entry[0].replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+      return `/locations/${slug}`;
+    }
+    return '/quote';
   };
 
   return (
@@ -33,9 +34,9 @@ const TownList = () => {
         </ul>
       </div>
       <div className="town-column">
-        <h4>Other Areas</h4>
+        <h4>More Service Areas</h4>
         <ul>
-          {SERVICE_AREAS.general.slice(0, 6).map(town => (
+          {SERVICE_AREAS.general.map(town => (
             <li key={town}><Link to={getTownLink(town)}>{town}</Link></li>
           ))}
         </ul>

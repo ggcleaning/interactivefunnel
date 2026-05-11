@@ -216,6 +216,25 @@
   top: 120px; /* Sticky on desktop */
 }
 
+/* ── MOBILE FIX ──────────────────────────────────────────────────────
+   On screens below 1024px the grid collapses to a single column.
+   `position: sticky` causes the calculator to lock to the top of the
+   viewport while the page scrolls beneath it, making steps unreachable.
+   `overflow: hidden` clips tall steps (add-ons, contact form) silently.
+   Both are reset here so the widget scrolls naturally on mobile.
+   ──────────────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .qf-calc-wrapper {
+    position: relative;
+    top: auto;
+    overflow: visible;
+    /* Added padding to clear the sticky bottom bar (Bug 1 Fix) */
+    padding-bottom: 90px; 
+  }
+}
+
+
+
 /* Inline Widget Overrides */
 .qf-calc-wrapper .ew-modal.inline-mode {
   border: none;

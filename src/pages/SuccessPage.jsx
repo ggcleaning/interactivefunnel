@@ -5,6 +5,7 @@ import { CheckCircle2, Calendar, ArrowRight, MessageSquare, Camera, Phone } from
 import Sparkles from '../components/Sparkles';
 import PhotoQuoteFlow from '../components/PhotoQuoteFlow';
 import { sendToCRM } from '../utils/crm';
+import { BUSINESS } from '../data/config';
 
 const SuccessPage = () => {
     const location = useLocation();
@@ -197,7 +198,7 @@ const SuccessPage = () => {
                         <Link to="/" className="btn-primary flex items-center justify-center gap-2">
                             Return Home <ArrowRight size={18} />
                         </Link>
-                        <a href="tel:5162988323" className="btn-outline flex items-center justify-center gap-2">
+                        <a href={`tel:${BUSINESS.phone.replace(/[^0-9]/g, '')}`} className="btn-outline flex items-center justify-center gap-2">
                              Have Questions? Call Us
                         </a>
                     </div>

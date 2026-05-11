@@ -4,7 +4,7 @@
 //           This function runs on the server side only.
 //
 // Required Netlify Environment Variable:
-//   STRIPE_SECRET_KEY=sk_live_... (or sk_test_... for testing)
+//   STRIPE_SECRET_KEY (Managed in Netlify UI)
 // ============================================================
 
 import Stripe from 'stripe';

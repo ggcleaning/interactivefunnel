@@ -21,9 +21,7 @@ import ServicesPage from './pages/ServicesPage';
 import RecurringPlansPage from './pages/RecurringPlansPage';
 import CommercialPage from './pages/CommercialPage';
 import QuotePage from './pages/QuotePage';
-import GardenCityPage from './pages/GardenCityPage';
-import ManhassetPage from './pages/ManhassetPage';
-import DixHillsPage from './pages/DixHillsPage';
+import LocationPage from './pages/LocationPage';
 import DeepCleanChecklistPage from './pages/DeepCleanChecklistPage';
 import ClientStoriesPage from './pages/ClientStoriesPage';
 import InternalQuotePage from './pages/InternalQuotePage';
@@ -82,9 +80,7 @@ function AppContent() {
             <Route path="/commercial-quote" element={<CommercialQuotePage />} />
             <Route path="/commercial-intake" element={<CommercialQuotePage />} />
             <Route path="/quote"      element={<QuotePage />} />
-            <Route path="/locations/garden-city" element={<GardenCityPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
-            <Route path="/locations/manhasset" element={<ManhassetPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
-            <Route path="/locations/dix-hills" element={<DixHillsPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
+            <Route path="/locations/:slug" element={<LocationPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
             <Route path="/services/deep-cleaning-checklist" element={<DeepCleanChecklistPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
             <Route path="/reviews" element={<ClientStoriesPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
             

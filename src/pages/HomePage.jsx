@@ -7,6 +7,7 @@ import HeroTemplate from '../components/modular/HeroTemplate';
 import TrustBar from '../components/modular/TrustBar';
 import CTABanner from '../components/modular/CTABanner';
 import FAQSection from '../components/modular/FAQSection';
+import ServiceAreasSection from '../components/modular/ServiceAreasSection';
 import heroBg from '../assets/hero-bg.png';
 import familyPhoto from '../assets/family-photo.jpg';
 import './HomePage.css';
@@ -177,22 +178,8 @@ const HomePage = ({ onOpenEstimate }) => {
         </div>
       </section>
 
-      {/* SERVICE AREA */}
-      <section className="home-section home-area-section">
-        <div className="home-container">
-          <motion.div className="home-section-header" {...fadeUp}>
-            <div className="home-label">Where We Clean</div>
-            <h2>Serving Nassau &amp; Suffolk County, Long Island</h2>
-            <p>G&G Cleaning serves homeowners and businesses throughout Nassau and Suffolk County. Don't see your town listed? Contact us — we likely cover your area and can confirm availability within one business hour.</p>
-          </motion.div>
-          <motion.div className="home-area-grid" {...fadeUp} transition={{ duration: 0.55, delay: 0.1 }}>
-            {['Hempstead', 'Huntington', 'Islip', 'Babylon', 'Brookhaven', 'Smithtown', 'Garden City', 'Massapequa', 'Levittown', 'Valley Stream', 'Freeport', 'Commack'].map(town => (
-              <div key={town} className="home-area-chip">{town}</div>
-            ))}
-          </motion.div>
-          <p className="home-area-note">Don't see your town? <Link to="/quote" className="hs-link">Contact us</Link> — we likely serve your area.</p>
-        </div>
-      </section>
+      {/* SERVICE AREAS */}
+      <ServiceAreasSection />
 
       {/* ABOUT / TRUST */}
       <section className="home-section home-about">

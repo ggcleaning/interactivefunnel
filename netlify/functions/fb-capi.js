@@ -14,7 +14,7 @@ exports.handler = async (event) => {
 
     try {
         const body = JSON.parse(event.body);
-        
+
         // Configuration from Netlify Environment Variables
         // You MUST add these inside your Netlify Dashboard -> Site settings -> Environment variables
         const PIXEL_ID = process.env.VITE_FB_PIXEL_ID;
@@ -33,8 +33,9 @@ exports.handler = async (event) => {
         const payload = {
             data: [
                 {
-                    event_name: 'Lead',
+                    event_name: body.eventName || 'Lead',
                     event_time: Math.floor(Date.now() / 1000), // Current time in seconds
+                    event_id: body.eventId || undefined,
                     action_source: 'system_generated', // or 'website'
                     user_data: {
                         em: body.email ? [hashData(body.email)] : [],
@@ -52,7 +53,7 @@ exports.handler = async (event) => {
                     },
                     custom_data: {
                         event_source: 'crm',
-                        lead_event_source: 'Your CRM',
+                        lead_event_source: body.source || 'Your CRM',
                         value: body.value || 0,
                         currency: 'USD'
                     }

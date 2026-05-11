@@ -4,11 +4,13 @@ import {
     Lock, ShieldCheck, Calculator, Send, Copy, 
     UserPlus, CheckCircle2, AlertTriangle, 
     Calendar, Clock, Home, Info, LogOut,
-    PlusCircle, MinusCircle, DollarSign
+    PlusCircle, MinusCircle, DollarSign,
+    FileText, CheckCircle, ExternalLink, Loader2,
+    Search
 } from 'lucide-react';
-import { calculateRecurringQuote, getDistancePricing, ADDON_META_INTERNAL } from '../utils/pricingEngine';
+import { calculateRecurringQuote, calculateCommercialQuote, getDistancePricing, ADDON_META_INTERNAL } from '../utils/pricingEngine';
 import { getZipDistance } from '../config/serviceZones';
-import { sendInternalQuote } from '../utils/crm';
+import { sendInternalQuote, generateDocument, fetchQuote } from '../utils/crm';
 import './InternalQuotePage.css';
 
 // Admin & Staff Configuration
@@ -56,6 +58,7 @@ const INITIAL_FORM = {
     customerNotes: '', internalVANotes: '',
     overrideCode: '', couponCode: '',
     quotedBy: 'Griselda', otherStaff: '',
+    internalQuoteId: null, // Track the persistent ID (GGQ-YYYY-XXXXXX)
 };
 
 const InternalQuotePage = () => {
@@ -66,11 +69,22 @@ const InternalQuotePage = () => {
     const [isFieldMode, setIsFieldMode] = useState(false);
     const [estimate, setEstimate] = useState(null);
     const [distancePricing, setDistancePricing] = useState(null);
+    const [isCommercial, setIsCommercial] = useState(false);
+    const [searchId, setSearchId] = useState('');
+    const [isLoadingQuote, setIsLoadingQuote] = useState(false);
     const [isCalculating, setIsCalculating] = useState(false);
     const [toast, setToast] = useState(null);
     const [isApproved, setIsApproved] = useState(false);
-
-    const isCommercial = form.cleaningType === 'commercial';
+    const [syncStatus, setSyncStatus] = useState({ 
+        status: 'idle', // 'idle' | 'syncing' | 'success' | 'error' | 'saving'
+        lastSynced: null, 
+        error: null 
+    });
+    const [isSaving, setIsSaving] = useState(false);
+    const [docStatus, setDocStatus] = useState({
+        proposal: { status: 'not_generated', url: null },
+        agreement: { status: 'not_generated', url: null }
+    });
 
     // ── Authentication ────────────────────────────────────────────────────────
     const handleLogin = (e) => {
@@ -189,37 +203,30 @@ const InternalQuotePage = () => {
         let rushFee = 0;
         let discount = 0;
 
-        // Rush Fee Logic (Mirrors public widget but allow bypass)
+        // Rush Fee Logic
         if (form.preferredDate) {
             const daysOut = Math.ceil((new Date(form.preferredDate) - new Date()) / (1000 * 60 * 60 * 24));
-            if (daysOut <= 0) rushFee = 100; // Same day
-            else if (daysOut === 1) rushFee = 65; // Next day
-            else if (daysOut === 2) rushFee = 45; // 2 day
+            if (daysOut <= 0) rushFee = 100;
+            else if (daysOut === 1) rushFee = 65;
+            else if (daysOut === 2) rushFee = 45;
         }
 
-        // Apply Overrides
         const activeOverride = ADMIN_OVERRIDE_CODES[form.overrideCode.toUpperCase()];
         if (activeOverride?.waiveRushFee) rushFee = 0;
 
-        // Base total varies by mode
         let baseTotal = 0;
         if (isCommercial) {
-            // For commercial internal, we show the MIN as the primary total to close the lead, 
-            // but we'll show the range in the summary
-            baseTotal = estimate.perVisit.min;
+            baseTotal = estimate.perVisit?.min || 0;
         } else {
-            baseTotal = estimate.distMonth1.finalTotal;
+            baseTotal = estimate.distMonth1?.finalTotal || 0;
         }
         
-        // Apply Coupons
         const activeCoupon = CUSTOMER_COUPONS[form.couponCode.toUpperCase()];
         if (activeCoupon) {
             discount = activeCoupon.type === 'flat' ? activeCoupon.amount : (baseTotal * activeCoupon.amount);
         }
 
         const finalTotal = baseTotal + rushFee - discount;
-        
-        // Deposits: 25% for residential, commercial might be different but sticking to 25% for consistency or $0
         const deposit = isCommercial ? 0 : Math.round(finalTotal * 0.25);
 
         return {
@@ -231,33 +238,122 @@ const InternalQuotePage = () => {
             overrideLabel: activeOverride?.label,
             couponLabel: activeCoupon?.label,
             isCommercialRange: isCommercial,
-            commercialMax: isCommercial ? (estimate.perVisit.max + rushFee - discount) : null
+            commercialMax: isCommercial ? ((estimate.perVisit?.max || 0) + rushFee - discount) : null
         };
     }, [estimate, form.preferredDate, form.overrideCode, form.couponCode, isCommercial]);
 
     // ── Actions ────────────────────────────────────────────────────────────────
     const handlePushToGHL = async () => {
+        if (!form.phone || !form.firstName) {
+            showToast('Name and Phone are required for sync', 'error');
+            return;
+        }
+
+        setSyncStatus(prev => ({ ...prev, status: 'syncing' }));
         const staffName = form.quotedBy === 'Other' ? form.otherStaff : form.quotedBy;
         const payload = {
-            ...form,
-            internalQuotedBy: staffName,
-            quoteTotal: totals.total,
-            monthlyTotal: estimate?.monthly?.min || 0,
-            depositAmount: totals.deposit,
-            balanceDue: totals.balance,
-            travelFee: distancePricing?.travelFee || 0,
-            rushFee: totals.rushFee,
-            discountAmount: totals.discount,
-            overrideUsed: !!totals.overrideLabel,
-            priorityOverrideUsed: form.overrideCode,
-            status: isApproved ? 'Manual Booking Approved' : (isFieldMode ? 'On-Site Adjustment' : 'Internal Quote Generated'),
-            isFieldAdjustment: isFieldMode,
-            tags: isFieldMode ? ['On-Site-Adjustment'] : (isApproved ? ['Manually-Approved'] : [])
+            quoteData: {
+                ...form,
+                internalQuotedBy: staffName,
+                quoteTotal: totals.total,
+                monthlyTotal: estimate?.monthly?.min || 0,
+                depositAmount: totals.deposit,
+                balanceDue: totals.balance,
+                travelFee: distancePricing?.travelFee || 0,
+                rushFee: totals.rushFee,
+                discountAmount: totals.discount,
+                overrideUsed: !!totals.overrideLabel,
+                priorityOverrideUsed: form.overrideCode,
+                status: isApproved ? 'Manual Booking Approved' : (isFieldMode ? 'On-Site Adjustment' : 'Internal Quote Generated'),
+                isFieldAdjustment: isFieldMode,
+                tags: isFieldMode ? ['On-Site-Adjustment'] : (isApproved ? ['Manually-Approved'] : [])
+            },
+            customerData: {
+                firstName: form.firstName,
+                lastName: form.lastName,
+                phone: form.phone,
+                email: form.email,
+                address: form.address,
+                city: form.city,
+                zipCode: form.zipCode
+            },
+            internalQuoteId: form.internalQuoteId,
+            action: 'sync'
         };
 
-        const result = await sendInternalQuote(payload, isFieldMode ? 'field_adjustment' : (isApproved ? 'manual_approval' : 'internal_quote'));
-        if (result.success) showToast(isFieldMode ? 'Final price updated in GHL!' : 'Successfully pushed to GHL!', 'success');
-        else showToast('Error pushing to GHL: ' + result.error, 'error');
+        const result = await sendInternalQuote(payload, form.internalQuoteId);
+        
+        if (result.success) {
+            setSyncStatus({
+                status: 'success',
+                lastSynced: new Date().toLocaleTimeString(),
+                error: null
+            });
+            
+            if (result.internalQuoteId) {
+                setForm(f => ({ ...f, internalQuoteId: result.internalQuoteId }));
+                if (result.proposal_pdf_url || result.agreement_url) {
+                    setDocStatus({
+                        proposal: { status: result.proposal_status || 'idle', url: result.proposal_pdf_url },
+                        agreement: { status: result.agreement_status || 'idle', url: result.agreement_url }
+                    });
+                }
+            }
+            showToast(isFieldMode ? 'Final price updated in GHL!' : 'Successfully pushed to GHL!', 'success');
+        } else {
+            setSyncStatus({ status: 'error', lastSynced: null, error: result.error });
+            showToast('Error pushing to GHL: ' + result.error, 'error');
+        }
+    };
+
+    const handleSaveDraft = async () => {
+        setIsSaving(true);
+        setSyncStatus(prev => ({ ...prev, status: 'saving' }));
+        
+        const staffName = form.quotedBy === 'Other' ? form.otherStaff : form.quotedBy;
+        const payload = {
+            quoteData: {
+                ...form,
+                internalQuotedBy: staffName,
+                quoteTotal: totals.total,
+                depositAmount: totals.deposit,
+                balanceDue: totals.balance
+            },
+            customerData: {
+                firstName: form.firstName,
+                lastName: form.lastName,
+                phone: form.phone,
+                email: form.email,
+                address: form.address,
+                city: form.city,
+                zipCode: form.zipCode
+            },
+            internalQuoteId: form.internalQuoteId,
+            action: 'save_only'
+        };
+
+        try {
+            const result = await sendInternalQuote(payload, form.internalQuoteId);
+            if (result.success) {
+                setForm(f => ({ ...f, internalQuoteId: result.internalQuoteId }));
+                if (result.proposal_pdf_url || result.agreement_url) {
+                    setDocStatus({
+                        proposal: { status: result.proposal_status || 'idle', url: result.proposal_pdf_url },
+                        agreement: { status: result.agreement_status || 'idle', url: result.agreement_url }
+                    });
+                }
+                showToast('Draft saved successfully!', 'success');
+                setSyncStatus(prev => ({ ...prev, status: 'idle', lastSynced: new Date().toLocaleTimeString() }));
+            } else {
+                showToast('Error saving draft: ' + result.error, 'error');
+                setSyncStatus(prev => ({ ...prev, status: 'error', error: result.error }));
+            }
+        } catch (e) {
+            showToast('Save failed: ' + e.message, 'error');
+            setSyncStatus(prev => ({ ...prev, status: 'error', error: e.message }));
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleSendProposal = async () => {
@@ -268,37 +364,126 @@ const InternalQuotePage = () => {
         
         const staffName = form.quotedBy === 'Other' ? form.otherStaff : form.quotedBy;
         const payload = {
-            ...form,
-            internalQuotedBy: staffName,
-            quoteTotal: totals.total,
-            monthlyTotal: estimate?.monthly?.min || 0,
-            depositAmount: totals.deposit,
-            balanceDue: totals.balance,
-            travelFee: distancePricing?.travelFee || 0,
-            rushFee: totals.rushFee,
-            discountAmount: totals.discount,
-            overrideUsed: !!totals.overrideLabel,
-            priorityOverrideUsed: form.overrideCode,
-            status: 'Commercial Proposal Requested',
-            tags: ['Commercial-Proposal-Triggered']
+            quoteData: {
+                ...form,
+                internalQuotedBy: staffName,
+                quoteTotal: totals.total,
+                monthlyTotal: estimate?.monthly?.min || 0,
+                depositAmount: totals.deposit,
+                balanceDue: totals.balance,
+                status: 'Commercial Proposal Requested',
+                tags: ['Commercial-Proposal-Triggered']
+            },
+            customerData: {
+                firstName: form.firstName,
+                lastName: form.lastName,
+                phone: form.phone,
+                email: form.email,
+                address: form.address,
+                city: form.city,
+                zipCode: form.zipCode
+            },
+            internalQuoteId: form.internalQuoteId,
+            action: 'send_proposal'
         };
 
         showToast('Generating proposal...', 'info');
-        const result = await sendInternalQuote(payload, 'send_proposal');
+        const result = await sendInternalQuote(payload, form.internalQuoteId);
         if (result.success) {
             showToast('Proposal triggered in GHL!', 'success');
-            setTimeout(() => {
-                navigate('/quote-confirmed', { 
-                    state: { 
-                        form: payload,
-                        isCommercial: true 
-                    } 
-                });
-            }, 1000);
+            if (result.proposal_pdf_url) {
+                setDocStatus(prev => ({
+                    ...prev,
+                    proposal: { status: 'generated', url: result.proposal_pdf_url }
+                }));
+            }
         } else {
             showToast('Error triggering proposal: ' + result.error, 'error');
         }
+    };
 
+    const handleGenerateDoc = async (type) => {
+        if (!form.internalQuoteId) {
+            showToast('Please "Save Draft" first to assign a Quote ID.', 'warning');
+            return;
+        }
+
+        setDocStatus(prev => ({
+            ...prev,
+            [type]: { ...prev[type], status: 'generating' }
+        }));
+
+        try {
+            const result = await generateDocument(form.internalQuoteId, type);
+
+            if (result.success) {
+                setDocStatus(prev => ({
+                    ...prev,
+                    [type]: { status: 'generated', url: result.url }
+                }));
+                showToast(`${type === 'proposal' ? 'Proposal' : 'Agreement'} generated!`, 'success');
+            } else {
+                setDocStatus(prev => ({
+                    ...prev,
+                    [type]: { ...prev[type], status: 'error' }
+                }));
+                showToast(`Generation failed: ${result.error}`, 'error');
+            }
+        } catch (err) {
+            setDocStatus(prev => ({
+                ...prev,
+                [type]: { ...prev[type], status: 'error' }
+            }));
+            showToast('Failed to connect to generator', 'error');
+        }
+    };
+
+    const handleLoadQuote = async () => {
+        if (!searchId) return;
+        setIsLoadingQuote(true);
+        try {
+            const result = await fetchQuote(searchId.trim());
+            if (result.success) {
+                const quote = result.quote;
+                const payload = quote.quote_payload;
+                
+                const customer = quote.customer || {};
+                setForm({
+                    ...INITIAL_FORM,
+                    ...payload,
+                    firstName: customer.first_name || payload.firstName || '',
+                    lastName: customer.last_name || payload.lastName || '',
+                    email: customer.email || payload.email || '',
+                    phone: customer.phone || payload.phone || '',
+                    address: customer.service_address || payload.address || '',
+                    city: customer.city || payload.city || '',
+                    zipCode: customer.postal_code || payload.zipCode || '',
+                    internalQuoteId: quote.internal_quote_id
+                });
+                
+                setIsCommercial(quote.property_type === 'Commercial' || payload.propertyType === 'commercial');
+                
+                setDocStatus({
+                    proposal: { 
+                        status: quote.proposal_status === 'generated' ? 'generated' : 'idle', 
+                        url: quote.proposal_pdf_url 
+                    },
+                    agreement: { 
+                        status: quote.agreement_status === 'generated' ? 'generated' : 'idle', 
+                        url: quote.agreement_url 
+                    }
+                });
+                
+                showToast('Quote loaded successfully!', 'success');
+                setSearchId('');
+            } else {
+                showToast('Quote not found: ' + result.error, 'error');
+            }
+        } catch (e) {
+            showToast('Load failed: ' + e.message, 'error');
+        } finally {
+            setIsLoadingQuote(false);
+        }
     };
 
     const copyQuote = () => {
@@ -312,8 +497,6 @@ Frequency: ${form.commercialFrequency}
 Est. Per Visit: $${estimate.perVisit.min} - $${estimate.perVisit.max}
 Est. Monthly: $${estimate.monthly.min} - $${estimate.monthly.max}
 Notes: Final proposal provided after walkthrough.
-
-Contact: ${BUSINESS.phone}
             `.trim();
         } else {
             summary = `
@@ -324,8 +507,6 @@ Home: ${form.bedrooms} Bed / ${form.bathrooms} Bath
 Total: $${totals.total}
 Deposit: $${totals.deposit} (Required to secure date)
 Balance: $${totals.balance} (Due day of cleaning)
-
-Book here: ggcleaningli.com/quote
             `.trim();
         }
         navigator.clipboard.writeText(summary);
@@ -334,8 +515,7 @@ Book here: ggcleaningli.com/quote
 
     const sendDepositLink = () => {
         showToast('Stripe link flow initiated (Redirecting...)', 'info');
-        // Reusing public checkout function would go here
-        handlePushToGHL(); // Push data before redirect
+        handlePushToGHL();
     };
 
     // ── Rendering ─────────────────────────────────────────────────────────────
@@ -362,32 +542,50 @@ Book here: ggcleaningli.com/quote
     }
 
     return (
-        <div className="iq-page">
+        <div className={`iq-page ${isFieldMode ? 'field-mode' : 'office-mode'}`}>
             <header className="iq-topbar">
                 <div className="iq-topbar-left">
-                    <span className="iq-topbar-badge">ADMIN</span>
-                    <h1 className="iq-topbar-title">Internal Quote Console</h1>
+                    <div className="iq-topbar-badge">INTERNAL</div>
+                    <h1 className="iq-topbar-title">G&G Quote Desk</h1>
                 </div>
+                
                 <div className="iq-topbar-right">
+                    <div className="iq-sync-health">
+                        <div className={`iq-sync-dot ${syncStatus.status}`} title={`Status: ${syncStatus.status}`} />
+                        <div className="iq-sync-text">
+                            <span className="status-label">
+                                {syncStatus.status === 'syncing' ? 'Syncing to GHL...' : 
+                                 syncStatus.status === 'error' ? 'Sync Failed' : 
+                                 syncStatus.status === 'success' ? 'Synced' : 'Ready'}
+                            </span>
+                            {syncStatus.lastSynced && (
+                                <span className="status-time">Last: {syncStatus.lastSynced}</span>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="iq-mode-toggle">
                         <span className={!isFieldMode ? 'active' : ''}>OFFICE</span>
-                        <button className={`iq-toggle-switch ${isFieldMode ? 'field' : ''}`} onClick={() => setIsFieldMode(!isFieldMode)}>
-                            <div className="iq-toggle-handle"></div>
+                        <button 
+                            className={`iq-toggle-switch ${isFieldMode ? 'field' : 'office'}`}
+                            onClick={() => setIsFieldMode(!isFieldMode)}
+                        >
+                            <div className="iq-toggle-handle" />
                         </button>
                         <span className={isFieldMode ? 'active' : ''}>FIELD</span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginLeft: '20px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 600 }}>Quoting as: {form.quotedBy === 'Other' ? form.otherStaff : form.quotedBy}</span>
-                        <span style={{ fontSize: '10px', color: 'var(--iq-success)' }}>● System Online</span>
+
+                    <div className="iq-staff-identity">
+                        <span className="staff-name">Quoting as: {form.quotedBy === 'Other' ? form.otherStaff : form.quotedBy}</span>
+                        <span className="staff-status">● System Online</span>
                     </div>
+
                     <button onClick={handleLogout} className="iq-logout-btn"><LogOut size={14} /></button>
                 </div>
             </header>
 
-            <main className={`iq-layout ${isFieldMode ? 'field-mode' : ''}`}>
+            <main className="iq-layout">
                 <div className="iq-form-stack">
-                    
-                    {/* Section 1: Customer Info - Hidden in Field Mode to save space */}
                     {!isFieldMode && (
                         <div className="iq-section">
                             <h2 className="iq-section-title"><UserPlus size={16} /> Customer Details</h2>
@@ -435,7 +633,6 @@ Book here: ggcleaningli.com/quote
                         </div>
                     )}
 
-                    {/* Section 2: Service Config */}
                     <div className="iq-section">
                         <h2 className="iq-section-title"><Calculator size={16} /> Service Configuration</h2>
                         <div className="iq-grid-3">
@@ -486,7 +683,7 @@ Book here: ggcleaningli.com/quote
                         </div>
 
                         {isCommercial ? (
-                            <div className="iq-grid-3" style={{ marginTop: '16px' }}>
+                            <div className="iq-grid-3 mt-16">
                                 <div className="iq-field">
                                     <label className="iq-label">Visits Per Week</label>
                                     <select className="iq-select" value={form.commercialFrequency} onChange={set('commercialFrequency')}>
@@ -512,7 +709,7 @@ Book here: ggcleaningli.com/quote
                                 </div>
                             </div>
                         ) : (
-                            <div className="iq-grid-3" style={{ marginTop: '16px' }}>
+                            <div className="iq-grid-3 mt-16">
                                 <div className="iq-field">
                                     <label className="iq-label">Bedrooms</label>
                                     <input type="number" className="iq-input" value={form.bedrooms} onChange={set('bedrooms')} min={0} />
@@ -530,19 +727,19 @@ Book here: ggcleaningli.com/quote
 
                         {!isCommercial ? (
                             <>
-                                <div className="iq-pricing-toggles" style={{ display: 'flex', gap: '20px', marginTop: '16px', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', color: form.useHourlyPricing ? 'var(--iq-gold)' : 'inherit' }}>
+                                <div className="iq-pricing-toggles mt-16">
+                                    <label className={form.useHourlyPricing ? 'active' : ''}>
                                         <input type="checkbox" checked={form.useHourlyPricing} onChange={() => togglePricingMode('hourly')} />
                                         Override: Custom Hourly Rate
                                     </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', color: form.useSqftPricing ? 'var(--iq-gold)' : 'inherit' }}>
+                                    <label className={form.useSqftPricing ? 'active' : ''}>
                                         <input type="checkbox" checked={form.useSqftPricing} onChange={() => togglePricingMode('sqft')} />
                                         Override: Custom SQFT Rate
                                     </label>
                                 </div>
 
                                 {form.useHourlyPricing && (
-                                    <div className="iq-grid-2" style={{ marginTop: '12px', background: 'var(--iq-card-bg)', padding: '16px', borderRadius: '8px', border: '1px dashed var(--iq-gold)' }}>
+                                    <div className="iq-grid-2 iq-override-card mt-12">
                                         <div className="iq-field">
                                             <label className="iq-label">Estimated Hours</label>
                                             <input type="number" className="iq-input" value={form.estimatedHours} onChange={set('estimatedHours')} step={0.5} min={0.5} />
@@ -555,18 +752,18 @@ Book here: ggcleaningli.com/quote
                                 )}
 
                                 {form.useSqftPricing && (
-                                    <div className="iq-grid-2" style={{ marginTop: '12px', background: 'var(--iq-card-bg)', padding: '16px', borderRadius: '8px', border: '1px dashed var(--iq-gold)' }}>
+                                    <div className="iq-grid-2 iq-override-card mt-12">
                                         <div className="iq-field">
                                             <label className="iq-label">Rate per SQFT ($)</label>
                                             <input type="number" className="iq-input" value={form.ratePerSqft} onChange={set('ratePerSqft')} step={0.01} min={0.01} />
                                         </div>
-                                        <div className="iq-field" style={{ display: 'flex', alignItems: 'flex-end', color: 'var(--iq-muted)', fontSize: '12px', paddingBottom: '12px' }}>
+                                        <div className="iq-field iq-summary-info">
                                             Calculation uses the 'Home Size (SQFT)' field from above.
                                         </div>
                                     </div>
                                 )}
 
-                                <label className="iq-label" style={{ marginTop: '20px', display: 'block' }}>Add-on Services</label>
+                                <label className="iq-label mt-20 block">Add-on Services</label>
                                 <div className="iq-addon-grid">
                                     {ADDON_META_INTERNAL.map(addon => (
                                         <div 
@@ -582,7 +779,7 @@ Book here: ggcleaningli.com/quote
                             </>
                         ) : (
                             <>
-                                <label className="iq-label" style={{ marginTop: '20px', display: 'block' }}>Specific Scope Additions</label>
+                                <label className="iq-label mt-20 block">Specific Scope Additions</label>
                                 <div className="iq-addon-grid">
                                     {[
                                         { key: 'windowCleaning', label: 'Window Cleaning', icon: '🪟' },
@@ -608,7 +805,6 @@ Book here: ggcleaningli.com/quote
                         )}
                     </div>
 
-                    {/* Section 3: Schedule & Overrides */}
                     <div className="iq-section override-section">
                         <h2 className="iq-section-title"><Calendar size={16} /> Scheduling & Overrides</h2>
                         <div className="iq-grid-2">
@@ -623,7 +819,7 @@ Book here: ggcleaningli.com/quote
                                 )}
                                 {totals.overrideLabel && (
                                     <div className="iq-rush-bypassed">
-                                        <ShieldCheck size={14} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                                        <ShieldCheck size={14} className="mr-6" />
                                         <span>Override Active: System restrictions bypassed.</span>
                                     </div>
                                 )}
@@ -664,7 +860,6 @@ Book here: ggcleaningli.com/quote
                         </div>
                     </div>
 
-                    {/* Section 4: Notes */}
                     <div className="iq-section">
                         <h2 className="iq-section-title"><Info size={16} /> Notes & Access</h2>
                         <div className="iq-grid-2">
@@ -694,8 +889,37 @@ Book here: ggcleaningli.com/quote
                                     ? (form.businessName || 'New Business')
                                     : (form.firstName || form.lastName ? `${form.firstName} ${form.lastName}` : 'New Customer')}
                             </div>
+                            {form.internalQuoteId && (
+                                <div className="iq-summary-id">
+                                    ID: {form.internalQuoteId}
+                                </div>
+                            )}
                         </div>
                         
+                        <div className="iq-summary-title">
+                            <div className="flex items-center gap-8">
+                                <Calculator size={20} />
+                                <h3>Quote Summary</h3>
+                            </div>
+                            <div className="iq-load-quote-box">
+                                <input 
+                                    type="text" 
+                                    placeholder="Load by ID..." 
+                                    value={searchId}
+                                    onChange={(e) => setSearchId(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleLoadQuote()}
+                                    className="iq-search-input"
+                                />
+                                <button 
+                                    onClick={handleLoadQuote} 
+                                    disabled={isLoadingQuote || !searchId}
+                                    className="iq-search-btn"
+                                >
+                                    {isLoadingQuote ? <Loader2 size={14} className="spin" /> : <Search size={14} />}
+                                </button>
+                            </div>
+                        </div>
+
                         <div className="iq-summary-body">
                             {isCommercial ? (
                                 <>
@@ -715,7 +939,7 @@ Book here: ggcleaningli.com/quote
                                             <span className="value fee">+${estimate.deepCleanFee}</span>
                                         </div>
                                     )}
-                                    <div className="iq-summary-row" style={{ marginTop: '8px', fontSize: '11px', color: 'var(--iq-muted)' }}>
+                                    <div className="iq-summary-row mt-8 iq-summary-info">
                                         <Info size={10} /> <span>Prices are ranges. Final proposal after walkthrough.</span>
                                     </div>
                                 </>
@@ -827,8 +1051,25 @@ Book here: ggcleaningli.com/quote
                         </div>
 
                         <div className="iq-actions">
-                            <button className="iq-btn iq-btn-gold" onClick={handlePushToGHL}>
-                                <UserPlus size={16} /> {isFieldMode ? 'UPDATE FINAL PRICE IN GHL' : 'SYNC TO CRM / GHL'}
+                            <button 
+                                className={`iq-btn iq-btn-gold ${syncStatus.status === 'syncing' ? 'loading' : ''}`} 
+                                onClick={handlePushToGHL}
+                                disabled={syncStatus.status === 'syncing'}
+                            >
+                                {syncStatus.status === 'syncing' ? (
+                                    <Clock size={16} className="spin" />
+                                ) : (
+                                    <UserPlus size={16} />
+                                )}
+                                {isFieldMode ? 'UPDATE FINAL PRICE IN GHL' : 'SYNC TO CRM / GHL'}
+                            </button>
+                            <button 
+                                className={`iq-btn iq-btn-outline ${isSaving ? 'loading' : ''}`} 
+                                onClick={handleSaveDraft}
+                                disabled={isSaving || syncStatus.status === 'syncing'}
+                            >
+                                {isSaving ? <Clock size={16} className="spin" /> : <ShieldCheck size={16} />}
+                                SAVE DRAFT ONLY
                             </button>
                             {!isFieldMode && (
                                 <button className="iq-btn iq-btn-primary" onClick={sendDepositLink}>
@@ -844,17 +1085,59 @@ Book here: ggcleaningli.com/quote
                                 <Copy size={16} /> {isFieldMode ? 'COPY FINAL TOTAL' : 'COPY SUMMARY'}
                             </button>
                             <button 
-                                className={`iq-btn ${isApproved ? 'iq-btn-success' : 'iq-btn-outline'}`}
+                                className={`iq-btn ${isApproved ? 'iq-btn-success' : 'iq-btn-outline'} mt-8`}
                                 onClick={() => setIsApproved(!isApproved)}
-                                style={{ marginTop: '8px' }}
                             >
                                 <CheckCircle2 size={16} /> {isApproved ? 'MANUAL APPROVAL SET' : 'MARK AS APPROVED'}
                             </button>
+
+                            {form.internalQuoteId && (
+                                <div className="iq-docs-section">
+                                    <hr className="iq-summary-divider" />
+                                    <h4 className="iq-docs-title">Branded Documents</h4>
+                                    
+                                    <div className="iq-doc-row">
+                                        <div className="iq-doc-info">
+                                            <FileText size={14} />
+                                            <span>Proposal</span>
+                                            {docStatus.proposal.status === 'generated' && <CheckCircle size={12} className="text-success" />}
+                                        </div>
+                                        {docStatus.proposal.status === 'generating' ? (
+                                            <Loader2 size={14} className="spin" />
+                                        ) : docStatus.proposal.url ? (
+                                            <div className="iq-doc-actions-inline">
+                                                <a href={docStatus.proposal.url} target="_blank" rel="noreferrer" className="iq-doc-link">View</a>
+                                                <button className="iq-doc-regen" onClick={() => handleGenerateDoc('proposal')}>Regen</button>
+                                            </div>
+                                        ) : (
+                                            <button className="iq-doc-generate" onClick={() => handleGenerateDoc('proposal')}>Generate</button>
+                                        )}
+                                    </div>
+
+                                    <div className="iq-doc-row">
+                                        <div className="iq-doc-info">
+                                            <FileText size={14} />
+                                            <span>Agreement</span>
+                                            {docStatus.agreement.status === 'generated' && <CheckCircle size={12} className="text-success" />}
+                                        </div>
+                                        {docStatus.agreement.status === 'generating' ? (
+                                            <Loader2 size={14} className="spin" />
+                                        ) : docStatus.agreement.url ? (
+                                            <div className="iq-doc-actions-inline">
+                                                <a href={docStatus.agreement.url} target="_blank" rel="noreferrer" className="iq-doc-link">View</a>
+                                                <button className="iq-doc-regen" onClick={() => handleGenerateDoc('agreement')}>Regen</button>
+                                            </div>
+                                        ) : (
+                                            <button className="iq-doc-generate" onClick={() => handleGenerateDoc('agreement')}>Generate</button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    <div style={{ marginTop: '20px', padding: '0 10px' }}>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', color: 'var(--iq-muted)', fontSize: '12px' }}>
+                    <div className="mt-20 iq-footer-note">
+                        <div className="iq-footer-note-content">
                             <Info size={14} />
                             <span>This is a private staff tool. Data pushed here triggers the "Internal Quote" GHL workflow.</span>
                         </div>

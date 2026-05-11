@@ -58,12 +58,18 @@ const PrivacyPolicy = ({ isOpen, onClose }) => {
                             </section>
 
                             <section>
-                                <h3>5. Data Security</h3>
+                                <h3>5. Analytics and Tracking</h3>
+                                <p>We partner with Microsoft Clarity and Microsoft Advertising to capture how you use and interact with our website through behavioral metrics, heatmaps, and session replay to improve and market our products and services.</p>
+                                <p>Website usage data is captured using first and third-party cookies and other tracking technologies to determine the popularity of products/services and online activity. Additionally, we use this information for site optimization, fraud/security purposes, and advertising. For more information about how Microsoft collects and uses your data, visit the <a href="https://www.microsoft.com/privacy/privacystatement" target="_blank" rel="noopener noreferrer">Microsoft Privacy Statement</a>.</p>
+                            </section>
+
+                            <section>
+                                <h3>6. Data Security</h3>
                                 <p>We have put in place appropriate security measures to prevent your personal data from being accidentally lost, used, or accessed in an unauthorized way. We do not sell your personal data to third parties.</p>
                             </section>
 
                             <section>
-                                <h3>6. Contact Us</h3>
+                                <h3>7. Contact Us</h3>
                                 <p>If you have any questions about this privacy policy or our privacy practices, please contact us at:</p>
                                 <p>
                                     <strong>Email:</strong> {BUSINESS.email}<br />

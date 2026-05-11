@@ -10,9 +10,14 @@
 import { getFbp, getFbc } from './metaTracking';
 
 const BOOKING_WEBHOOK_URL = import.meta.env.VITE_GHL_BOOKING_WEBHOOK_URL || import.meta.env.VITE_GHL_WEBHOOK_URL;
-const QUOTE_WEBHOOK_URL = import.meta.env.VITE_GHL_QUOTE_WEBHOOK_URL;
-const FB_ADS_WEBHOOK_URL = import.meta.env.VITE_GHL_FB_ADS_WEBHOOK_URL;
+const QUOTE_WEBHOOK_URL   = import.meta.env.VITE_GHL_QUOTE_WEBHOOK_URL;
+const FB_ADS_WEBHOOK_URL  = import.meta.env.VITE_GHL_FB_ADS_WEBHOOK_URL;
 const INTERNAL_WEBHOOK_URL = import.meta.env.VITE_GHL_INTERNAL_WEBHOOK_URL;
+
+// Single unified public webhook — all website forms (quote, booking, commercial, chat)
+// use this URL. Only Facebook Ads leads use the separate FB_ADS_WEBHOOK_URL.
+const UNIFIED_PUBLIC_WEBHOOK =
+    QUOTE_WEBHOOK_URL || BOOKING_WEBHOOK_URL || import.meta.env.VITE_GHL_WEBHOOK_URL;
 
 /**
  * Sends lead or booking data to the configured Webhook (GHL).
@@ -27,57 +32,65 @@ export const sendToCRM = async (data, type = 'lead_capture') => {
     const storedSource = typeof window !== 'undefined' ? sessionStorage.getItem('lead_source') : null;
     const isFacebook = storedSource === 'facebook' || data.source === 'facebook';
 
-    // Select the correct webhook based on the event type and source
-    let webhookUrl = BOOKING_WEBHOOK_URL;
-
-    if (type === 'lead_capture' || type === 'quote_request' || type === 'photo_quote' || type === 'commercial_quote') {
-        if (isFacebook && FB_ADS_WEBHOOK_URL) {
-            webhookUrl = FB_ADS_WEBHOOK_URL;
-        } else {
-            webhookUrl = QUOTE_WEBHOOK_URL || import.meta.env.VITE_GHL_WEBHOOK_URL || BOOKING_WEBHOOK_URL;
-        }
-    }
+    // All public forms → unified webhook. Facebook-sourced leads → FB Ads webhook.
+    let webhookUrl = isFacebook && FB_ADS_WEBHOOK_URL
+        ? FB_ADS_WEBHOOK_URL
+        : UNIFIED_PUBLIC_WEBHOOK;
 
     if (!webhookUrl) {
         console.error(`[Lead Capture] FATAL: No webhook URL configured for event type: ${type}.`, data);
         return { success: false, error: 'No webhook URL' };
     }
 
+
     // ── Meta CAPI Enrichment ──────────────────────────────────────────────────
     const fbp = data.fbp || getFbp();
     const fbc = data.fbc || getFbc();
 
     // ── GHL Field Mirroring ───────────────────────────────────────────────────
-        const enrichedData = {
+    const enrichedData = {
         ...data,
-        "Full Name": data.name || data.contactName,
-        "Full name": data.name || data.contactName,
+        "Full Name": data.name || (data.firstName ? `${data.firstName} ${data.lastName}` : data.contactName),
+        "Full name": data.name || (data.firstName ? `${data.firstName} ${data.lastName}` : data.contactName),
         "Phone number": data.phone,
         "Phone Number": data.phone,
         "Email Address": data.email,
         "Email": data.email,
         "Business Name": data.businessName,
-        "Property Type": data.propertyType || data.commercialPropertyType,
+        "Property Type": data.propertyType || data.serviceCategory || data.commercialPropertyType,
         "Facility Type": data.commercialPropertyType,
         "Square Footage": data.sqft,
         "Cleaning Frequency": data.commercialFrequency || data.frequency,
-        "Target Visit Price": data.quoteTotal || data.perVisitTotal,
-        "Total Monthly Value": data.monthlyTotal,
-        "Value": data.value || data.quoteTotal || (type === 'lead_capture' ? 180 : 0),
+        "Target Visit Price": data.quoteTotal || data.perVisitTotal || data.exact,
+        "Total Monthly Value": data.monthlyTotal || data.ongoingMonthlyTotal,
+        "Value": data.value || data.quoteTotal || data.exact || (type === 'lead_capture' ? 180 : 0),
         "Currency": data.currency || 'USD',
-        "value": data.value || data.quoteTotal || (type === 'lead_capture' ? 180 : 0),
+        "value": data.value || data.quoteTotal || data.exact || (type === 'lead_capture' ? 180 : 0),
         "currency": data.currency || 'USD',
         "campaign": data.utm_campaign || data.campaign,
         "adset": data.ad_set || data.adset,
         "content": data.utm_content || data.content,
-        "source": data.source || 'GG Cleaning Website',
+        "source": data.source || 'GG Cleaning Concierge',
         "event_type": type,
         "timestamp": new Date().toISOString(),
         "fbp": fbp || undefined,
         "fbc": fbc || undefined,
+
+        // --- Concierge Operational Intelligence ---
+        "Clutter Level": data.clutterLevel,
+        "Has Pets": data.hasPets ? 'Yes' : 'No',
+        "Elevator Access": data.hasElevator ? 'Yes' : 'No',
+        "Floor Level": data.floorLevel,
+        "Parking Info": data.parkingType,
+        "Bedrooms": data.bedrooms,
+        "Bathrooms": data.bathrooms,
+        "Estimate Range": data.min && data.max ? `$${data.min} - $${data.max}` : undefined,
+        "Confidence Score": data.confidence,
+
         "tags": [
             ...(data.tags || []),
-            ...(type === 'commercial_quote' ? ['Commercial-Quote'] : [])
+            ...(type === 'commercial_quote' ? ['Commercial-Quote'] : []),
+            ...(type === 'concierge_lead' ? ['Concierge-Funnel', 'Warm-Lead'] : [])
         ],
     };
 
@@ -153,80 +166,104 @@ export const sendToCRM = async (data, type = 'lead_capture') => {
 export const sendToGHL = sendToCRM;
 
 /**
- * Sends an internal staff quote to the dedicated GHL internal webhook.
- * This keeps internal quotes separate from public website leads in CRM.
- * Also logs to console for debugging.
+ * Sends an internal staff quote to the robust GHL Sync service.
+ * This ensures the quote is saved to Supabase and synced to GHL V2 API
+ * with proper deduplication and ID tracking.
  *
  * @param {Object} quoteData - Full quote payload from the internal quote desk.
- * @param {string} eventType - 'internal_quote' | 'override_audit' | 'deposit_initiated'
+ * @param {string} internalQuoteId - Existing ID if updating a saved quote.
+ * @param {boolean} forceNew - Force create a new quote ID.
  */
-export const sendInternalQuote = async (quoteData, eventType = 'internal_quote') => {
-    const webhookUrl = INTERNAL_WEBHOOK_URL || BOOKING_WEBHOOK_URL;
+export const sendInternalQuote = async (payload, internalQuoteId = null) => {
+    const ADMIN_SECRET = import.meta.env.VITE_INTERNAL_ADMIN_SECRET;
 
-    if (!webhookUrl) {
-        console.error('[Internal Quote] FATAL: No webhook URL configured. Set VITE_GHL_INTERNAL_WEBHOOK_URL.', quoteData);
-        return { success: false, error: 'No webhook URL configured' };
-    }
-
-    const payload = {
-        ...quoteData,
-        "Full Name": `${quoteData.firstName} ${quoteData.lastName}`,
-        "Email": quoteData.email,
-        "Phone": quoteData.phone,
-        "Business Name": quoteData.businessName,
-        "Facility Type": quoteData.commercialPropertyType,
-        "Square Footage": quoteData.sqft,
-        "Cleaning Frequency": quoteData.commercialFrequency || quoteData.frequency,
-        "Target Visit Price": quoteData.quoteTotal,
-        "Total Monthly Value": quoteData.monthlyTotal,
-        "Value": quoteData.quoteTotal || 0,
-        "Currency": 'USD',
-        "value": quoteData.quoteTotal || 0,
-        "currency": 'USD',
-        booking_source: 'Internal Quote Desk',
-        event_type: eventType,
-        timestamp: new Date().toISOString(),
-        location_id: 'D5WYnc5CK01FskhJtW3W',
-        tags: [
-            'Internal-Quote',
-            'Staff-Submitted',
-            ...(quoteData.overrideUsed ? ['Override-Used', `Override-${quoteData.priorityOverrideUsed}`] : []),
-            ...(quoteData.couponCodeUsed ? [`Coupon-${quoteData.couponCodeUsed}`] : []),
-            ...(eventType === 'send_proposal' ? ['trigger-commercial-proposal'] : []),
-            ...(quoteData.tags || []),
-        ],
-    };
-
-    // Always console log for debugging
-    console.log(`[Internal Quote Desk] ${eventType.toUpperCase()} payload:`, payload);
-
-    if (quoteData.overrideUsed) {
-        console.warn(
-            `[OVERRIDE AUDIT] Code "${quoteData.priorityOverrideUsed}" used by "${quoteData.internalQuotedBy}" for ${quoteData.firstName} ${quoteData.lastName} on ${quoteData.preferredDate}`,
-            { overrideCode: quoteData.priorityOverrideUsed, quotedBy: quoteData.internalQuotedBy }
-        );
-    }
+    // Handle both legacy (unstructured) and new (structured) payloads
+    const body = payload.quoteData && payload.customerData 
+        ? { ...payload, internalQuoteId: internalQuoteId || payload.internalQuoteId }
+        : {
+            quoteData: payload,
+            customerData: {
+                firstName: payload.firstName,
+                lastName: payload.lastName,
+                email: payload.email,
+                phone: payload.phone,
+                address: payload.address,
+                city: payload.city,
+                zipCode: payload.zipCode
+            },
+            internalQuoteId
+          };
 
     try {
-        const response = await fetch(webhookUrl, {
+        const response = await fetch('/.netlify/functions/ghl-sync', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-admin-secret': ADMIN_SECRET
+            },
+            body: JSON.stringify(body),
         });
+
+        const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(`GHL webhook error: ${response.statusText}`);
+            throw new Error(result.error || `Sync error: ${response.statusText}`);
         }
 
-        console.log(`[Internal Quote Desk] Successfully sent ${eventType} to GHL`, {
-            customer: `${quoteData.firstName} ${quoteData.lastName}`,
-            total: quoteData.quoteTotal,
-            override: quoteData.priorityOverrideUsed || 'none',
+        console.log(`[Internal Quote Desk] Sync/Save successful:`, result);
+        return result;
+    } catch (error) {
+        console.error('[Internal Quote Desk] Operation failed:', error);
+        return { success: false, error: error.message };
+    }
+};
+/**
+ * Generates a branded document (proposal/agreement) and stores it in Supabase
+ * @param {string} internalQuoteId 
+ * @param {string} documentType 'proposal' | 'agreement'
+ */
+export const generateDocument = async (internalQuoteId, documentType) => {
+  const adminSecret = import.meta.env.VITE_INTERNAL_ADMIN_SECRET;
+  
+  const response = await fetch('/.netlify/functions/generate-document', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-secret': adminSecret
+    },
+    body: JSON.stringify({ internalQuoteId, documentType })
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Failed to generate document');
+  return data;
+};
+
+/**
+ * Fetches a saved quote by its internal ID
+ * @param {string} internalQuoteId 
+ */
+export const fetchQuote = async (internalQuoteId) => {
+    const ADMIN_SECRET = import.meta.env.VITE_INTERNAL_ADMIN_SECRET;
+    
+    try {
+        const response = await fetch('/.netlify/functions/ghl-sync', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'x-admin-secret': ADMIN_SECRET
+            },
+            body: JSON.stringify({ 
+                internalQuoteId,
+                action: 'get_quote'
+            }),
         });
 
-        return { success: true };
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to fetch quote');
+        return result;
     } catch (error) {
-        console.error('[Internal Quote Desk] Error sending to GHL:', error);
+        console.error('[CRM Utils] fetchQuote failed:', error);
         return { success: false, error: error.message };
     }
 };
