@@ -834,21 +834,25 @@
             };
 
             try {
-                // Pointing to the new Mother's Day workflow webhook
-                const webhookUrl = 'https://services.leadconnectorhq.com/hooks/D5WYnc5CK01FskhJtW3W/webhook-trigger/7948bdc3-bea2-496e-83ff-05447d3df7c3';
+                // Use our secure server-side proxy instead of GHL directly
+                const proxyUrl = '/.netlify/functions/crm-proxy';
                 
-                await fetch(webhookUrl, {
+                await fetch(proxyUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(ghlPayload)
+                    body: JSON.stringify({
+                        data: ghlPayload,
+                        type: 'mothers_day_lead'
+                    })
                 });
                 
                 // Hide form and show success message
                 form.style.display = 'none';
                 document.getElementById('successMessage').style.display = 'block';
             } catch (error) {
+
                 console.error("Error submitting form:", error);
                 alert("There was an issue reserving your spot. Please call us directly!");
                 

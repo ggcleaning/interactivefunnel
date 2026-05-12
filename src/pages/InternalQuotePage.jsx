@@ -281,7 +281,7 @@ const InternalQuotePage = () => {
             action: 'sync'
         };
 
-        const result = await sendInternalQuote(payload, form.internalQuoteId);
+        const result = await sendInternalQuote(payload, pin, form.internalQuoteId);
         
         if (result.success) {
             setSyncStatus({
@@ -333,7 +333,7 @@ const InternalQuotePage = () => {
         };
 
         try {
-            const result = await sendInternalQuote(payload, form.internalQuoteId);
+            const result = await sendInternalQuote(payload, pin, form.internalQuoteId);
             if (result.success) {
                 setForm(f => ({ ...f, internalQuoteId: result.internalQuoteId }));
                 if (result.proposal_pdf_url || result.agreement_url) {
@@ -388,7 +388,7 @@ const InternalQuotePage = () => {
         };
 
         showToast('Generating proposal...', 'info');
-        const result = await sendInternalQuote(payload, form.internalQuoteId);
+        const result = await sendInternalQuote(payload, pin, form.internalQuoteId);
         if (result.success) {
             showToast('Proposal triggered in GHL!', 'success');
             if (result.proposal_pdf_url) {
@@ -414,7 +414,7 @@ const InternalQuotePage = () => {
         }));
 
         try {
-            const result = await generateDocument(form.internalQuoteId, type);
+            const result = await generateDocument(form.internalQuoteId, type, pin);
 
             if (result.success) {
                 setDocStatus(prev => ({
@@ -442,7 +442,7 @@ const InternalQuotePage = () => {
         if (!searchId) return;
         setIsLoadingQuote(true);
         try {
-            const result = await fetchQuote(searchId.trim());
+            const result = await fetchQuote(searchId.trim(), pin);
             if (result.success) {
                 const quote = result.quote;
                 const payload = quote.quote_payload;
