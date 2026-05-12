@@ -145,7 +145,7 @@ const PhotoQuoteFlow = ({ onClose, initialData = {}, inline = false }) => {
                 ...form,
                 photo_quote: true,
                 status: 'Pending Review',
-                location_id: 'D5WYnc5CK01FskhJtW3W',
+                location_id: import.meta.env.VITE_GHL_LOCATION_ID,
                 tags: [form.serviceType?.toLowerCase().includes('commercial') ? 'commercialclient' : 'residentialclient', 'Photo-Quote']
             }, 'photo_quote');
 

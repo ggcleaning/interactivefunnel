@@ -51,7 +51,7 @@ const BookingInfoModal = ({ isOpen, onClose, plan, onSuccess }) => {
         ...form,
         plan_name: plan.name,
         status: 'Lead / Pending Payment',
-        location_id: 'D5WYnc5CK01FskhJtW3W',
+        location_id: import.meta.env.VITE_GHL_LOCATION_ID,
         checkout_stage: 'info_completed'
       }, 'lead_capture');
 
@@ -248,8 +248,8 @@ const BookingInfoModal = ({ isOpen, onClose, plan, onSuccess }) => {
                           service: plan.name,
                           deposit_amount: plan.depositAmount || 50,
                           status: 'Deposit Paid',
-                          location_id: 'D5WYnc5CK01FskhJtW3W',
-                          pipeline_id: 'IpQfoYb7UZNLlLC6gv4g',
+                          location_id: import.meta.env.VITE_GHL_LOCATION_ID,
+                          pipelineId: import.meta.env.VITE_GHL_PIPELINE_ID,
                           stage: 'Booking Confirmed',
                           stripe_payment_id: paymentIntent.id,
                           tags: ['residentialclient', 'Paid Booking']

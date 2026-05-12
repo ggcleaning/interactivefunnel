@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import emailjs from '@emailjs/browser';
-import { calculateRecurringQuote, ADDON_META, getDistancePricing, formatCurrency } from '../utils/pricingEngine';
+import { calculateRecurringQuote, ADDON_META, getDistancePricing, formatCurrency } from '../utils/pricingEngine.js';
 import { getZipDistance } from '../config/serviceZones';
 import CheckoutForm from './CheckoutForm';
 import PhotoQuoteFlow from './PhotoQuoteFlow';
@@ -385,7 +385,7 @@ const EstimateWidget = ({ onClose, inline = false }) => {
                     addons: form.addons,
                     marketing_opt_in: form.marketingOptIn,
                     source, audience, utm_campaign: campaign, ad_set: adSet, utm_content: content,
-                    location_id: 'D5WYnc5CK01FskhJtW3W',
+                    location_id: import.meta.env.VITE_GHL_LOCATION_ID,
                     status: 'Anonymous Estimate Generated',
                     tags: ['Anonymous-Estimate', ...tags],
                     service_zone: zipData.zone,
@@ -419,7 +419,7 @@ const EstimateWidget = ({ onClose, inline = false }) => {
                 estimateRange: estimate?.distMonth1 ? `$${estimate.distMonth1.finalTotal}` : '',
                 status: 'Lead / Contact Captured',
                 source, audience, utm_campaign: campaign, ad_set: adSet, utm_content: content,
-                location_id: 'D5WYnc5CK01FskhJtW3W',
+                location_id: import.meta.env.VITE_GHL_LOCATION_ID,
                 tags,
                 ...(window.__gg_lead_meta ? window.__gg_lead_meta : {})
             }, 'lead_capture');
@@ -477,7 +477,7 @@ const EstimateWidget = ({ onClose, inline = false }) => {
                 estimateRange: `$${baseEstimateFinal}`,
                 status: 'Qualified Lead / Checkout Started',
                 source: source,
-                location_id: 'D5WYnc5CK01FskhJtW3W',
+                location_id: import.meta.env.VITE_GHL_LOCATION_ID,
                 urgency_fee: urgencyFee,
                 tags: tags
             }, 'lead_capture');
@@ -947,8 +947,8 @@ const EstimateWidget = ({ onClose, inline = false }) => {
                                                     source: source,
                                                     deposit_amount: depositAmount,
                                                     stripe_payment_id: paymentIntent.id,
-                                                    location_id: 'D5WYnc5CK01FskhJtW3W',
-                                                    pipeline_id: 'IpQfoYb7UZNLlLC6gv4g',
+                                                    location_id: import.meta.env.VITE_GHL_LOCATION_ID,
+                                                    pipelineId: import.meta.env.VITE_GHL_PIPELINE_ID,
                                                     stage: 'Booking Confirmed',
                                                     tags: tags,
                                                     // Distance pricing persistence

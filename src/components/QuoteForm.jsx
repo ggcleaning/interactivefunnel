@@ -89,7 +89,7 @@ const QuoteForm = () => {
                     utm_campaign: campaign,
                     ad_set: adSet,
                     utm_content: content,
-                    location_id: 'D5WYnc5CK01FskhJtW3W',
+                    location_id: import.meta.env.VITE_GHL_LOCATION_ID,
                     marketing_opt_in: formData.marketingOptIn,
                     tags: tags,
                     // CAPI deduplication fields

@@ -53,14 +53,13 @@ export const PRICING_CONFIG = {
 export const ADDON_META_INTERNAL = PRICING_CONFIG.addons;
 export const ADDON_META = PRICING_CONFIG.addons;
 
-export const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount);
-};
+export function formatCurrency(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+}
 
 // ── COMMERCIAL PRICING CONFIG ────────────────────────────────────────────
 export const COMMERCIAL_CONFIG = {
