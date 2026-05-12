@@ -34,6 +34,19 @@ export const BUSINESS = {
 };
 
 // ==================================================================
+//  ACTIVE PROMOTIONS
+// ==================================================================
+export const OFFERS = {
+  active: true,
+  headline: 'Get $40 OFF Your First Deep Cleaning',
+  subheadline: 'Limited slots available for new clients this month!',
+  cta: 'Claim Discount',
+  code: 'DEEP40',
+  expires: 'May 31, 2026'
+};
+
+
+// ==================================================================
 //  SERVICE PACKAGES
 // ==================================================================
 export const PACKAGES = [

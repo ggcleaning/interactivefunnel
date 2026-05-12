@@ -42,6 +42,16 @@
   padding: 110px 24px 88px;
 }
 
+.has-promo .hero-template__inner {
+  padding-top: 154px;
+}
+
+@media (max-width: 860px) {
+  .has-promo .hero-template__inner {
+    padding-top: 130px;
+  }
+}
+
 .hero-template--light .hero-template__inner {
   padding: 100px 24px 80px;
 }

@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { HelmetProvider } from 'react-helmet-async';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import { OFFERS } from './data/config';
 import StickyCTA from './components/StickyCTA';
 import ScrollToTop from './components/ScrollToTop';
 import PrivacyPolicy from './components/PrivacyPolicy';
@@ -11,6 +12,7 @@ import TermsOfService from './components/TermsOfService';
 import EstimateWidget from './components/EstimateWidget';
 import ChatWidget from './components/ChatWidget';
 import Sparkles from './components/Sparkles';
+import PromoBanner from './components/modular/PromoBanner';
 
 import SuccessPage from './pages/SuccessPage';
 
@@ -64,7 +66,8 @@ function AppContent() {
   }, [location]);
 
   return (
-    <div className="app-shell" style={{ minHeight: '100vh', background: 'transparent' }}>
+    <div className={`app-shell ${OFFERS.active ? 'has-promo' : ''}`} style={{ minHeight: '100vh', background: 'transparent' }}>
+      <PromoBanner onOpenEstimate={() => setIsEstimateOpen(true)} />
       <Sparkles />
       {!isInternalRoute && <Navbar onOpenEstimate={() => setIsEstimateOpen(true)} />}
       <ScrollToTop />

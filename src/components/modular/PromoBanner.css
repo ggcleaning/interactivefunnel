@@ -1,0 +1,123 @@
+.promo-banner {
+  background: var(--gradient-primary);
+  color: white;
+  padding: 10px 24px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1100;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.promo-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1180px;
+  gap: 20px;
+}
+
+.promo-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.promo-icon {
+  font-size: 1.2rem;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+}
+
+.promo-text {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.01em;
+}
+
+.promo-headline {
+  font-weight: 700;
+  color: #fff;
+}
+
+.promo-sub {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.promo-cta {
+  background: white;
+  color: var(--color-primary);
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.promo-cta:hover {
+  background: var(--color-accent);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+}
+
+.promo-cta:active {
+  transform: translateY(0);
+}
+
+.promo-cta .arrow {
+  margin-left: 4px;
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+.promo-cta:hover .arrow {
+  transform: translateX(3px);
+}
+
+@media (max-width: 860px) {
+  .promo-banner {
+    padding: 8px 16px;
+  }
+  
+  .promo-banner-content {
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .promo-sub {
+    display: none;
+  }
+
+  .promo-text {
+    font-size: 0.8rem;
+  }
+
+  .promo-cta {
+    padding: 5px 12px;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .promo-icon {
+    display: none;
+  }
+  
+  .promo-text {
+    font-size: 0.75rem;
+  }
+}
