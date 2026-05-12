@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 // Function to hash user data as required by Meta CAPI
 const hashData = (data) => {
@@ -6,7 +6,7 @@ const hashData = (data) => {
     return crypto.createHash('sha256').update(data.trim().toLowerCase()).digest('hex');
 };
 
-exports.handler = async (event) => {
+export async function handler(event) {
     // Only allow POST requests
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
@@ -94,4 +94,4 @@ exports.handler = async (event) => {
             body: JSON.stringify({ error: 'Internal Server Error', details: error.message })
         };
     }
-};
+}
