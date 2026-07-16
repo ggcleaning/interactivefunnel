@@ -84,14 +84,33 @@ function CheckoutForm({ amount, onNext, onPrev, data, estimate }) {
 }
 
 export function BookingSummaryStep({ data, estimate, onNext, onPrev }) {
+  const [showCheckout, setShowCheckout] = useState(false);
   const [clientSecret, setClientSecret] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const depositAmount = 50; // $50 deposit
 
   useEffect(() => {
-    clarityEvent('booking_started');
+    if (typeof window !== 'undefined' && window.fbq) {
+      try {
+        const hasTrackedCompleted = sessionStorage.getItem('gg_quote_completed_tracked') === 'true';
+        if (!hasTrackedCompleted) {
+          window.fbq("trackCustom", "QuoteCompleted");
+          sessionStorage.setItem('gg_quote_completed_tracked', 'true');
+          console.log('[Meta Pixel] Fired QuoteCompleted event');
+        }
+      } catch (fbError) {
+        console.error('[Meta Pixel] QuoteCompleted failed:', fbError);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!showCheckout) return;
+
+    setLoading(true);
+    setError('');
     
     async function initPayment() {
       try {
@@ -123,59 +142,104 @@ export function BookingSummaryStep({ data, estimate, onNext, onPrev }) {
     }
 
     initPayment();
-  }, [data, estimate]);
+  }, [showCheckout, data, estimate]);
 
   const summaryItems = useMemo(() => [
     { label: 'Service', value: data.serviceCategory },
-    { label: 'Size', value: `${data.bedrooms} BR / ${data.bathrooms} BA` },
+    { label: 'Home Size', value: `${data.bedrooms} BR / ${data.bathrooms} BA (${data.sqft || 0} sqft)` },
     { label: 'Frequency', value: data.frequency },
-    { label: 'Customer', value: `${data.firstName} ${data.lastName}` }
+    { label: 'Client', value: `${data.firstName} ${data.lastName}` }
   ], [data]);
+
+  const handleReserveClick = () => {
+    setShowCheckout(true);
+    if (typeof window !== 'undefined' && window.fbq) {
+      try {
+        window.fbq("track", "InitiateCheckout");
+        console.log('[Meta Pixel] Fired InitiateCheckout event');
+      } catch (fbError) {
+        console.error('[Meta Pixel] InitiateCheckout failed:', fbError);
+      }
+    }
+  };
 
   return (
     <div className="booking-summary-step animate-concierge-fade">
-      <div className="summary-grid">
-        {summaryItems.map((item, i) => (
-          <div key={i} className="summary-item">
-            <span className="label">{item.label}</span>
-            <span className="value">{item.value}</span>
+      {!showCheckout ? (
+        <>
+          <div className="summary-grid">
+            {summaryItems.map((item, i) => (
+              <div key={i} className="summary-item">
+                <span className="label">{item.label}</span>
+                <span className="value" style={{ textTransform: item.label === 'Service' ? 'capitalize' : 'none' }}>
+                  {item.value}
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <div className="total-estimate-box glass-card">
-        <span className="estimate-label">Total Estimated Investment</span>
-        <h3 className="estimate-range">${estimate.min} — ${estimate.max}</h3>
-        <p className="deposit-note">A ${depositAmount} deposit is required to secure your appointment.</p>
-      </div>
-
-      {loading ? (
-        <div className="payment-loading">
-          <div className="spinner"></div>
-          <p>Preparing secure checkout...</p>
-        </div>
-      ) : error ? (
-        <div className="payment-error-state">
-          <p>{error}</p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            <button className="btn-outline" onClick={() => window.location.reload()}>Retry</button>
-            {window.location.hostname === 'localhost' && (
-              <button className="btn-primary" onClick={() => onNext({ stripePaymentId: 'mock_dev_id' })}>
-                Skip to Confirmation (Dev)
-              </button>
-            )}
+          <div className="total-estimate-box glass-card">
+            <span className="estimate-label">Total Estimated Investment</span>
+            <h3 className="estimate-range">${estimate.min} — ${estimate.max}</h3>
+            <p className="deposit-note">A ${depositAmount} deposit secures your preferred window.</p>
           </div>
-        </div>
+
+          <div className="what-next-box glass-card" style={{ padding: '1.5rem', marginBottom: '2rem', textAlign: 'left' }}>
+            <h4 style={{ color: 'var(--color-primary)', marginBottom: '0.75rem', fontWeight: 600 }}>What happens next:</h4>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem' }}>
+              <li style={{ display: 'flex', gap: '0.5rem' }}><span>📅</span> <strong>Select Your Window:</strong> Secure your booking by paying a refundable $50 deposit.</li>
+              <li style={{ display: 'flex', gap: '0.5rem' }}><span>📞</span> <strong>Custom Matching:</strong> We will call or text you within 24 hours to confirm your exact cleaning time.</li>
+              <li style={{ display: 'flex', gap: '0.5rem' }}><span>🔒</span> <strong>Peace of Mind:</strong> If we can't find a time that fits your schedule, your deposit is 100% refunded instantly.</li>
+            </ul>
+          </div>
+
+          <div className="step-actions">
+            <button type="button" className="btn-outline" onClick={onPrev}>
+              Back
+            </button>
+            <button type="button" className="btn-primary" onClick={handleReserveClick} style={{ minWidth: '220px' }}>
+              Reserve My Spot & Pay $50 Deposit
+            </button>
+          </div>
+        </>
       ) : (
-        <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-          <CheckoutForm 
-            amount={depositAmount} 
-            onNext={onNext} 
-            onPrev={onPrev}
-            data={data}
-            estimate={estimate}
-          />
-        </Elements>
+        <>
+          <div className="total-estimate-box glass-card" style={{ marginBottom: '1.5rem', padding: '1rem' }}>
+            <span className="estimate-label">Securing Booking for:</span>
+            <h4 style={{ margin: '0.25rem 0', color: 'var(--color-primary)' }}>{data.firstName}'s Custom Cleaning</h4>
+            <span className="estimate-label">Estimate: ${estimate.min} — ${estimate.max}</span>
+          </div>
+
+          {loading ? (
+            <div className="payment-loading">
+              <div className="spinner"></div>
+              <p>Preparing secure checkout...</p>
+            </div>
+          ) : error ? (
+            <div className="payment-error-state">
+              <p>{error}</p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '1rem' }}>
+                <button className="btn-outline" onClick={() => setShowCheckout(false)}>Go Back</button>
+                <button className="btn-primary" onClick={() => setShowCheckout(true)}>Retry</button>
+                {window.location.hostname === 'localhost' && (
+                  <button className="btn-primary" onClick={() => onNext({ stripePaymentId: 'mock_dev_id' })}>
+                    Skip to Confirmation (Dev)
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+              <CheckoutForm 
+                amount={depositAmount} 
+                onNext={onNext} 
+                onPrev={() => setShowCheckout(false)}
+                data={data}
+                estimate={estimate}
+              />
+            </Elements>
+          )}
+        </>
       )}
 
       <style>{`
@@ -205,6 +269,7 @@ export function BookingSummaryStep({ data, estimate, onNext, onPrev }) {
           padding: 1.5rem;
           background: var(--color-bg-alt);
           margin-bottom: 2rem;
+          border-radius: var(--radius-md);
         }
         .estimate-label {
           font-size: 0.9rem;
@@ -214,6 +279,7 @@ export function BookingSummaryStep({ data, estimate, onNext, onPrev }) {
           font-size: 2rem;
           margin: 0.5rem 0;
           color: var(--color-primary);
+          font-weight: 700;
         }
         .deposit-note {
           font-size: 0.85rem;

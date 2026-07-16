@@ -3,10 +3,10 @@ import { useState, useEffect, useMemo } from 'react';
 const STORAGE_KEY = 'gg_concierge_funnel_state';
 
 const INITIAL_STATE = {
-  currentStep: 'service-category',
+  currentStep: 'lead-capture',
   history: [],
   data: {
-    serviceCategory: '', // apartment, house, airbnb, commercial
+    serviceCategory: 'standard', // standard, deep, moveOut, airbnb, commercial
     bedrooms: 1,
     bathrooms: 1,
     sqft: '',
@@ -25,6 +25,8 @@ const INITIAL_STATE = {
     isExpress: false,
     isEcoFriendly: false,
     referralSource: '',
+    quote_session_id: '',
+    internal_quote_id: '',
   }
 };
 
@@ -74,28 +76,17 @@ export function useConciergeFunnel() {
   // Logic for conditional branching
   const getNextStep = (currentStep, data) => {
     switch (currentStep) {
-      case 'service-category':
-        if (data.serviceCategory === 'commercial') return 'commercial-type';
+      case 'lead-capture':
         return 'home-size';
       
       case 'home-size':
-        if (data.serviceCategory === 'apartment') return 'apartment-logistics';
-        return 'operational-intelligence';
-        
-      case 'apartment-logistics':
         return 'operational-intelligence';
         
       case 'operational-intelligence':
-        return 'frequency-selection';
-        
-      case 'frequency-selection':
-        return 'lead-capture';
-        
-      case 'lead-capture':
         return 'final-quote';
         
       default:
-        return 'service-category';
+        return 'lead-capture';
     }
   };
 

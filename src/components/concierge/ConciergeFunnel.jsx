@@ -27,9 +27,8 @@ export function ConciergeFunnel() {
   } = useConciergeFunnel();
 
   const estimate = useMemo(() => getConciergeEstimate(data), [data]);
-
   const progress = useMemo(() => {
-    const steps = ['service-category', 'home-size', 'operational-intelligence', 'lead-capture', 'final-quote'];
+    const steps = ['lead-capture', 'home-size', 'operational-intelligence', 'final-quote'];
     const idx = steps.indexOf(currentStep);
     return ((idx + 1) / steps.length) * 100;
   }, [currentStep]);
@@ -37,7 +36,7 @@ export function ConciergeFunnel() {
   // Handle final submission and tracking
   useEffect(() => {
     // Track funnel start
-    if (currentStep === 'service-category') {
+    if (currentStep === 'lead-capture') {
       clarityEvent('quote_started');
     }
 
@@ -52,13 +51,16 @@ export function ConciergeFunnel() {
       sendToCRM({
         ...data,
         ...estimate,
-        source: 'GG Cleaning Concierge'
-      }, 'concierge_lead');
-    }
-    
-    // Track recurring interest
-    if (currentStep === 'frequency-selection' && data.frequency && data.frequency !== 'One-time') {
-      clarityEvent('recurring_interest', { frequency: data.frequency });
+        event_type: 'quote_completed',
+        lead_stage: 'Quote Completed - Estimate Viewed',
+        source: 'Website Quote Funnel',
+        skipMetaLead: true, // Lead is fired at step 1
+        tags: [
+          'quote_completed',
+          'website_quote_funnel',
+          'estimate_viewed'
+        ]
+      }, 'quote_requested');
     }
 
     if (currentStep === 'booking-confirmed') {
@@ -70,21 +72,28 @@ export function ConciergeFunnel() {
       sendToCRM({
         ...data,
         ...estimate,
-        source: 'GG Cleaning Concierge'
+        event_type: 'booking_confirmed',
+        lead_stage: 'Booking Confirmed',
+        source: 'Website Quote Funnel',
+        skipMetaLead: true,
+        tags: [
+          'booking_confirmed',
+          'website_quote_funnel'
+        ]
       }, 'booking_confirmed');
     }
   }, [currentStep, data, estimate]);
 
   const renderStep = () => {
     switch (currentStep) {
-      case 'service-category':
+      case 'lead-capture':
         return (
           <ConciergeCard 
-            title="Welcome to G&G Concierge" 
-            subtitle="Let's find the perfect cleaning solution for you."
+            title="Get Your Free Cleaning Estimate" 
+            subtitle="Enter your contact info to calculate your personalized pricing."
           >
-            <ServiceCategoryStep 
-              value={data.serviceCategory} 
+            <LeadCaptureStep 
+              data={data} 
               onChange={updateData} 
               onNext={handleNext} 
             />
@@ -106,58 +115,13 @@ export function ConciergeFunnel() {
           </ConciergeCard>
         );
 
-      case 'apartment-logistics':
-        return (
-          <ConciergeCard 
-            title="Apartment Logistics" 
-            subtitle="Tell us about the accessibility of your building."
-          >
-            <ApartmentLogisticsStep 
-              data={data} 
-              onChange={updateData} 
-              onNext={handleNext} 
-              onPrev={prevStep} 
-            />
-          </ConciergeCard>
-        );
-
       case 'operational-intelligence':
         return (
           <ConciergeCard 
-            title="Operational Details" 
-            subtitle="We tailor our approach to your lifestyle."
+            title="Customize Your Service" 
+            subtitle="We tailor our approach to your lifestyle and home details."
           >
             <OperationalIntelligenceStep 
-              data={data} 
-              onChange={updateData} 
-              onNext={handleNext} 
-              onPrev={prevStep} 
-            />
-          </ConciergeCard>
-        );
-
-      case 'frequency-selection':
-        return (
-          <ConciergeCard 
-            title="Preferred Frequency" 
-            subtitle="Choose a schedule that fits your life. Recurring plans save you money."
-          >
-            <FrequencyStep 
-              value={data.frequency} 
-              onChange={updateData} 
-              onNext={handleNext} 
-              onPrev={prevStep} 
-            />
-          </ConciergeCard>
-        );
-
-      case 'lead-capture':
-        return (
-          <ConciergeCard 
-            title="Ready to view your estimate?" 
-            subtitle="Secure your personalized pricing plan."
-          >
-            <LeadCaptureStep 
               data={data} 
               onChange={updateData} 
               onNext={handleNext} 
@@ -169,8 +133,8 @@ export function ConciergeFunnel() {
       case 'final-quote':
         return (
           <ConciergeCard 
-            title="Confirm Your Concierge Booking" 
-            subtitle="Review your details and secure your preferred cleaning window."
+            title="Your Custom Cleaning Estimate" 
+            subtitle="Review your details and secure your booking with G&G."
           >
             <BookingSummaryStep 
               data={data}
@@ -230,7 +194,7 @@ export function ConciergeFunnel() {
     <ConciergeLayout 
       progress={progress} 
       showEstimate={
-        currentStep !== 'service-category' && 
+        currentStep !== 'lead-capture' && 
         currentStep !== 'final-quote' && 
         currentStep !== 'booking-confirmed'
       }

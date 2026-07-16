@@ -43,14 +43,15 @@ export const sendToCRM = async (data, type = 'lead_capture') => {
             body: JSON.stringify({ data: payload, type }),
         });
 
-        if (!response.ok) {
-            throw new Error(`Proxy error: ${response.statusText}`);
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || result.success === false) {
+            throw new Error(result.error || `Proxy returned status ${response.status}`);
         }
 
         console.log(`[CRM] Successfully sent ${type} event via proxy`);
 
-        // Fire standard frontend Facebook Pixel event if available
-        if (typeof window !== 'undefined' && window.fbq) {
+        // Fire standard frontend Facebook Pixel event if available (unless skipped)
+        if (typeof window !== 'undefined' && window.fbq && !data.skipMetaLead) {
             window.fbq('track', 'Lead', {
                 value: payload.value || 180,
                 currency: 'USD'
@@ -59,7 +60,62 @@ export const sendToCRM = async (data, type = 'lead_capture') => {
 
         return { success: true };
     } catch (error) {
-        console.error('[CRM] Error sending data:', error);
+        console.error('[CRM] Error sending data to proxy, trying fallback:', error);
+        
+        // Dynamic EmailJS fallback to prevent lead loss
+        const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+        const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+        const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
+        if (serviceId && templateId && publicKey) {
+            try {
+                console.log('[CRM Fallback] Forwarding lead via EmailJS...');
+                const emailjs = await import('@emailjs/browser');
+                
+                const notesContent = `[CRM FALLBACK] - CRM Webhook Failed to Forward Lead.
+Step Reached: ${payload.step_reached || 'N/A'}
+Quote Session ID: ${payload.quote_session_id || payload.internal_quote_id || 'N/A'}
+Timestamp: ${payload.timestamp}
+Page URL: ${payload.page_url || (typeof window !== 'undefined' ? window.location.href : 'N/A')}
+
+UTM Tracking:
+- Source: ${payload.utm_source || 'N/A'}
+- Medium: ${payload.utm_medium || 'N/A'}
+- Campaign: ${payload.utm_campaign || 'N/A'}
+
+Completed Answers:
+- Bedrooms: ${payload.bedrooms || 'N/A'}
+- Bathrooms: ${payload.bathrooms || 'N/A'}
+- Sqft Size: ${payload.sqft || 'N/A'}
+- Service Type: ${payload.serviceCategory || payload.serviceType || 'N/A'}
+- Frequency: ${payload.frequency || 'N/A'}
+- Pets: ${payload.hasPets ? 'Yes' : 'No'}
+- Clutter Level: ${payload.clutterLevel || 'N/A'}
+- Additional Notes: ${payload.notes || 'None'}`;
+
+                await emailjs.default.send(
+                    serviceId,
+                    templateId,
+                    {
+                        from_name: payload["Full Name"] || `${payload.first_name || ''} ${payload.last_name || ''}`.trim() || 'Web Lead',
+                        from_email: payload["Email Address"] || payload.email || '',
+                        phone: payload["Phone Number"] || payload.phone || '',
+                        service_type: payload.serviceCategory || payload.serviceType || 'Not specified',
+                        zip_code: payload.zip_code || payload.zipCode || '',
+                        notes: notesContent,
+                        to_name: 'G&G Cleaning Services'
+                    },
+                    publicKey
+                );
+                console.log('[CRM Fallback] Fallback email sent successfully.');
+                return { success: true, fallback: true };
+            } catch (emailjsError) {
+                console.error('[CRM Fallback] EmailJS sending failed:', emailjsError);
+            }
+        } else {
+            console.warn('[CRM Fallback] EmailJS environment variables are missing; cannot run fallback.');
+        }
+
         return { success: false, error: error.message };
     }
 };
