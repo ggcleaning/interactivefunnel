@@ -3,6 +3,21 @@ import { handler as webhookHandler } from '../../netlify/functions/stripe-webhoo
 import { handler as createPaymentIntentHandler } from '../../netlify/functions/create-payment-intent.js';
 import { getSupabaseClient } from '../../netlify/functions/utils/supabaseClient.js';
 
+const { mockPaymentIntentsCreate } = vi.hoisted(() => {
+  return {
+    mockPaymentIntentsCreate: vi.fn().mockImplementation(async (params) => {
+      return {
+        id: 'pi_mock123',
+        client_secret: 'pi_mock123_secret_test',
+        amount: params.amount,
+        currency: params.currency,
+        customer: params.customer,
+        metadata: params.metadata
+      };
+    })
+  };
+});
+
 // Mock Stripe
 vi.mock('stripe', () => {
   class StripeMock {
@@ -23,16 +38,7 @@ vi.mock('stripe', () => {
         create: vi.fn().mockResolvedValue({ id: 'cus_mock123' })
       };
       this.paymentIntents = {
-        create: vi.fn().mockImplementation(async (params) => {
-          return {
-            id: 'pi_mock123',
-            client_secret: 'pi_mock123_secret_test',
-            amount: params.amount,
-            currency: params.currency,
-            customer: params.customer,
-            metadata: params.metadata
-          };
-        })
+        create: mockPaymentIntentsCreate
       };
     }
   }
@@ -418,17 +424,12 @@ describe('Phase 2: Stripe Webhook & PaymentIntent Integration', () => {
     const res = await createPaymentIntentHandler(createReq);
     expect(res.statusCode).toBe(200);
 
-    const StripeMock = (await import('stripe')).default;
-    const stripeInstance = new StripeMock();
-    const createCall = stripeInstance.paymentIntents.create.mock.calls[0];
-    if (createCall) {
-      const metadata = createCall[0].metadata;
-      expect(metadata.customer_name).toBeUndefined();
-      expect(metadata.customer_email).toBeUndefined();
-      expect(metadata.customer_phone).toBeUndefined();
-      expect(metadata.request_id).toBe('req_pii_check_1');
-      expect(metadata.lead_uuid).toBe('uuid-pii-check-1');
-    }
+    const lastCall = mockPaymentIntentsCreate.mock.calls.at(-1);
+    expect(lastCall[0].metadata.customer_name).toBeUndefined();
+    expect(lastCall[0].metadata.customer_email).toBeUndefined();
+    expect(lastCall[0].metadata.customer_phone).toBeUndefined();
+    expect(lastCall[0].metadata.request_id).toBe('req_pii_check_1');
+    expect(lastCall[0].metadata.lead_uuid).toBe('uuid-pii-check-1');
   });
 
   // 22. Concierge amount cannot be tampered with ($50 flat enforced)
@@ -444,24 +445,49 @@ describe('Phase 2: Stripe Webhook & PaymentIntent Integration', () => {
 
     const res = await createPaymentIntentHandler(createReq);
     expect(res.statusCode).toBe(200);
+    const lastCall = mockPaymentIntentsCreate.mock.calls.at(-1);
+    expect(lastCall[0].amount).toBe(5000);
   });
 
-  // 23. EstimateWidget amount validation
-  it('23. validates EstimateWidget deposit server-side', async () => {
+  // 23. EstimateWidget amount validation & $50 deposit floor
+  it('23a. enforces $50 minimum floor when calculated deposit is below $50', async () => {
     const createReq = {
       httpMethod: 'POST',
       body: JSON.stringify({
         payment_flow: 'estimate_widget',
-        bedrooms: 3,
-        bathrooms: 2,
-        sqft: 1500,
-        amount: 7100, // Valid 25% deposit
-        request_id: 'req_ew_valid'
+        bedrooms: 1,
+        bathrooms: 1,
+        frequency: 'oneTime',
+        amount: 2000, // Attempted $20 deposit
+        request_id: 'req_ew_below_floor'
       })
     };
 
     const res = await createPaymentIntentHandler(createReq);
     expect(res.statusCode).toBe(200);
+
+    const lastCall = mockPaymentIntentsCreate.mock.calls.at(-1);
+    expect(lastCall[0].amount).toBe(5000); // 5000 cents ($50 floor enforced)
+  });
+
+  it('23b. calculates exact 25% deposit when total exceeds $50 deposit floor', async () => {
+    const createReq = {
+      httpMethod: 'POST',
+      body: JSON.stringify({
+        payment_flow: 'estimate_widget',
+        bedrooms: 4,
+        bathrooms: 3,
+        frequency: 'oneTime',
+        request_id: 'req_ew_above_floor'
+      })
+    };
+
+    const res = await createPaymentIntentHandler(createReq);
+    expect(res.statusCode).toBe(200);
+
+    const lastCall = mockPaymentIntentsCreate.mock.calls.at(-1);
+    // Base 140 + 4*25 (100) + 3*35 (105) = 345. 25% = 86.25 -> 86 * 100 = 8600 cents
+    expect(lastCall[0].amount).toBeGreaterThan(5000);
   });
 
   // 24 & 25. Identifier stability & separate inquiry

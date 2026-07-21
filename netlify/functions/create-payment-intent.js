@@ -49,8 +49,9 @@ function calculateEstimateDeposit(body) {
   const baseTotal = quote.firstMonthTotal;
   const dist = getDistancePricing(baseTotal, zipZone);
   const totalWithUrgency = dist.finalTotal + (parseInt(urgencyFee, 10) || 0);
-  const depositDollars = Math.round(totalWithUrgency * 0.25);
-  return Math.max(30, depositDollars) * 100; // minimum $30 deposit in cents
+  const calculatedDeposit = Math.round(totalWithUrgency * 0.25);
+  const finalDepositDollars = Math.max(calculatedDeposit, 50); // $50 minimum deposit floor
+  return finalDepositDollars * 100; // deposit in cents
 }
 
 export const handler = async (event) => {

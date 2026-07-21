@@ -141,7 +141,8 @@ const ReceiptSidebar = ({ form, estimate, distancePricing, step, serviceLabels }
     const urgencyFee = form.urgencyFee || 0;
     const baseTotal = estimate?.distMonth1?.finalTotal || 0;
     const total = baseTotal + urgencyFee;
-    const deposit = Math.round(total * 0.25);
+    const calculatedDeposit = Math.round(total * 0.25);
+    const deposit = Math.max(calculatedDeposit, 50); // $50 minimum deposit floor
 
     return (
         <div className="ew-sidebar">
@@ -454,11 +455,11 @@ const EstimateWidget = ({ onClose, inline = false }) => {
         setCheckoutLoading(true);
         setCheckoutError('');
         try {
-            // Recalculate deposit to include the urgency fee from date selection
             const urgencyFee = form.urgencyFee || 0;
             const baseEstimateFinal = estimate?.distMonth1?.finalTotal || 0;
             const totalWithUrgency = baseEstimateFinal + urgencyFee;
-            const finalDeposit = Math.round(totalWithUrgency * 0.25);
+            const calculatedDeposit = Math.round(totalWithUrgency * 0.25);
+            const finalDeposit = Math.max(calculatedDeposit, 50); // $50 minimum deposit floor
             setDepositAmount(finalDeposit);
 
             const res = await fetch('/.netlify/functions/create-payment-intent', {
