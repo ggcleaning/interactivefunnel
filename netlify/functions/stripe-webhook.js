@@ -96,6 +96,10 @@ async function sendOwnerNotification({ ownerEmail, customerName, service, bookin
     return;
   }
 
+  const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') || process.env.CONTEXT === 'deploy-preview';
+  const subjectPrefix = isTestMode ? '[TEST] ' : '';
+  const subject = `${subjectPrefix}G&G Deposit Paid — Lead ${escapeHtml(leadUuid)}`;
+
   const sanitizedContent = {
     customerName: escapeHtml(customerName || 'Customer'),
     service: escapeHtml(service || 'General Cleaning'),
@@ -103,9 +107,10 @@ async function sendOwnerNotification({ ownerEmail, customerName, service, bookin
     depositAmount: escapeHtml(`$${depositAmount}`),
     leadUuid: escapeHtml(leadUuid),
     paymentIntentId: escapeHtml(stripePaymentIntentId),
+    subject,
   };
 
-  console.log(`[stripe-webhook] Owner notification sent to ${ownerEmail} for lead ${sanitizedContent.leadUuid}`);
+  console.log(`[stripe-webhook] Owner notification (${subject}) sent to ${ownerEmail} for lead ${sanitizedContent.leadUuid}`);
 }
 
 export const handler = async (event) => {
