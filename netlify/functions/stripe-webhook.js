@@ -253,7 +253,7 @@ export const handler = async (event) => {
       // Send Owner Notification
       try {
         await sendOwnerNotification({
-          ownerEmail: process.env.OWNER_EMAIL,
+          ownerEmail: process.env.OWNER_EMAIL || 'info@ggcleaningli.com',
           customerName: fullName,
           service: leadRecord?.service_category || 'Residential Cleaning',
           bookingDate: leadRecord?.booking_date || 'Pending Selection',
