@@ -535,4 +535,68 @@ describe('Phase 2: Stripe Webhook & PaymentIntent Integration', () => {
     expect(res.body).not.toContain(process.env.STRIPE_SECRET_KEY);
     expect(res.body).not.toContain(stripeSecret);
   });
+
+  // 27. Test-mode email subject prefixing across Netlify contexts
+  it('27. applies [TEST] subject prefix fail-safe for all non-production contexts', async () => {
+    const originalContext = process.env.CONTEXT;
+    const originalStripeKey = process.env.STRIPE_SECRET_KEY;
+    const consoleSpy = vi.spyOn(console, 'log');
+
+    const runWebhookWithEnv = async (context, stripeKey, eventId, leadUuid) => {
+      process.env.CONTEXT = context;
+      process.env.STRIPE_SECRET_KEY = stripeKey;
+
+      const payload = {
+        id: eventId,
+        type: 'payment_intent.succeeded',
+        data: { object: { id: `pi_${eventId}`, amount_received: 5000, metadata: {} } }
+      };
+
+      const supabase = getSupabaseClient();
+      supabase.rpc.mockResolvedValueOnce({
+        data: { lead_uuid: leadUuid, lead_created: true, already_processed: false },
+        error: null
+      });
+
+      supabase.from.mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null })
+          })
+        })
+      });
+
+      await webhookHandler(createEvent(payload));
+    };
+
+    try {
+      // 1. production + sk_live_ => no [TEST] prefix
+      await runWebhookWithEnv('production', 'sk_live_123456789', 'evt_subj_1', 'uuid-subj-1');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Owner notification (G&G Deposit Paid — Lead uuid-subj-1) sent'));
+
+      // 2. production + sk_test_ => [TEST] prefix
+      await runWebhookWithEnv('production', 'sk_test_123456789', 'evt_subj_2', 'uuid-subj-2');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Owner notification ([TEST] G&G Deposit Paid — Lead uuid-subj-2) sent'));
+
+      // 3. deploy-preview => [TEST] prefix
+      await runWebhookWithEnv('deploy-preview', 'sk_test_123456789', 'evt_subj_3', 'uuid-subj-3');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Owner notification ([TEST] G&G Deposit Paid — Lead uuid-subj-3) sent'));
+
+      // 4. branch-deploy => [TEST] prefix
+      await runWebhookWithEnv('branch-deploy', 'sk_test_123456789', 'evt_subj_4', 'uuid-subj-4');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Owner notification ([TEST] G&G Deposit Paid — Lead uuid-subj-4) sent'));
+
+      // 5. dev => [TEST] prefix
+      await runWebhookWithEnv('dev', 'sk_test_123456789', 'evt_subj_5', 'uuid-subj-5');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Owner notification ([TEST] G&G Deposit Paid — Lead uuid-subj-5) sent'));
+
+      // 6. missing CONTEXT or missing Stripe key => fail safe with [TEST] prefix
+      await runWebhookWithEnv(undefined, undefined, 'evt_subj_6', 'uuid-subj-6');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Owner notification ([TEST] G&G Deposit Paid — Lead uuid-subj-6) sent'));
+    } finally {
+      process.env.CONTEXT = originalContext;
+      process.env.STRIPE_SECRET_KEY = originalStripeKey;
+      consoleSpy.mockRestore();
+    }
+  });
 });

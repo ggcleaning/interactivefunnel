@@ -96,8 +96,10 @@ async function sendOwnerNotification({ ownerEmail, customerName, service, bookin
     return;
   }
 
-  const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_') || process.env.CONTEXT === 'deploy-preview';
-  const subjectPrefix = isTestMode ? '[TEST] ' : '';
+  const isProduction =
+    process.env.CONTEXT === 'production' &&
+    process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
+  const subjectPrefix = isProduction ? '' : '[TEST] ';
   const subject = `${subjectPrefix}G&G Deposit Paid — Lead ${escapeHtml(leadUuid)}`;
 
   const sanitizedContent = {
