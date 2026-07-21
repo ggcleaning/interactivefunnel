@@ -3,7 +3,7 @@
   publish = "dist"
 
 [build.environment]
-  GG_FEATURE_GHL_SYNC = "false"
+  GG_FEATURE_GHL_SYNC = "true"
 
 
 [functions]
