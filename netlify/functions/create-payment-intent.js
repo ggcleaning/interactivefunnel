@@ -3,11 +3,11 @@
 // SECURITY: Stripe secret key NEVER goes to the browser.
 //           This function runs on the server side only.
 //
-// Required Netlify Environment Variable:
-//   STRIPE_SECRET_KEY (Managed in Netlify UI)
+// Metadata Contract: Identifiers ONLY (NO customer PII in metadata).
 // ============================================================
 
 import Stripe from 'stripe';
+import { calculateRecurringQuote, getDistancePricing } from '../../src/utils/pricingEngine.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -17,6 +17,41 @@ const headers = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json',
 };
+
+function cleanIdentifier(val) {
+  if (!val || val === 'null' || val === 'undefined') return '';
+  return String(val).trim();
+}
+
+function calculateEstimateDeposit(body) {
+  const { 
+    bedrooms = 1, 
+    bathrooms = 1, 
+    sqft = 0, 
+    frequency = 'oneTime', 
+    serviceType = 'standard',
+    condition = 'standard',
+    addons = [],
+    urgencyFee = 0,
+    zipZone = 'local'
+  } = body;
+
+  const quote = calculateRecurringQuote({
+    bedrooms: parseInt(bedrooms, 10) || 1,
+    bathrooms: parseInt(bathrooms, 10) || 1,
+    sqft: parseInt(sqft, 10) || 0,
+    frequency: frequency || 'oneTime',
+    serviceType: serviceType || 'standard',
+    condition: condition || 'standard',
+    addons: Array.isArray(addons) ? addons : [],
+  });
+
+  const baseTotal = quote.firstMonthTotal;
+  const dist = getDistancePricing(baseTotal, zipZone);
+  const totalWithUrgency = dist.finalTotal + (parseInt(urgencyFee, 10) || 0);
+  const depositDollars = Math.round(totalWithUrgency * 0.25);
+  return Math.max(30, depositDollars) * 100; // minimum $30 deposit in cents
+}
 
 export const handler = async (event) => {
   // Handle CORS preflight
@@ -29,27 +64,18 @@ export const handler = async (event) => {
   }
 
   try {
-    const body = JSON.parse(event.body);
+    const body = JSON.parse(event.body || '{}');
     const { 
       name, 
       email, 
       phone, 
-      address,
-      serviceType, 
-      service, 
-      estimateLow, 
-      estimateHigh, 
-      estimateRange,
-      addons, 
-      bookingDate, 
-      bookingTime, 
-      preferredTime,
-      urgencyFee,
-      amount, // Optional override if sent from Pricing Page
+      payment_flow,
+      amount,
       
-      // Metadata contract parameters
+      // Correlation metadata fields
       request_id,
       requestId,
+      lead_uuid,
       lead_id,
       leadId,
       funnel_session_id,
@@ -62,18 +88,50 @@ export const handler = async (event) => {
       metaEventId
     } = body;
 
-    // Use amount from body (if provided) or default to 5000 cents ($50)
-    const finalAmount = amount || 5000;
+    const flow = (payment_flow || 'concierge').toLowerCase();
+    let finalAmount = 5000; // Default Concierge $50 flat
 
-    // 1. Create a Customer so we can securely vault the card for recurring usage or remaining balances
+    if (flow === 'estimate_widget') {
+      const serverCalcAmount = calculateEstimateDeposit(body);
+      if (typeof amount === 'number' && amount > 0) {
+        // Validate amount is within expected range of server calculation (+/- $5 for roundings/addons)
+        const diff = Math.abs(amount - serverCalcAmount);
+        if (diff <= 500) {
+          finalAmount = amount;
+        } else {
+          finalAmount = serverCalcAmount;
+        }
+      } else {
+        finalAmount = serverCalcAmount;
+      }
+    } else {
+      // Concierge flow: strictly $50 (5000 cents)
+      finalAmount = 5000;
+    }
+
+    // 1. Create standard Stripe Customer (built-in fields only, no PII in metadata)
     const customer = await stripe.customers.create({
-      name: name || 'Not provided',
+      name: name || undefined,
       email: email || undefined,
       phone: phone || undefined,
-      metadata: {
-        service_type: serviceType || service || 'Cleaning',
-      }
     });
+
+    // 2. Build metadata contract containing correlation identifiers ONLY
+    const metadata = {};
+    const reqId = cleanIdentifier(request_id || requestId);
+    const leadUuid = cleanIdentifier(lead_uuid || lead_id || leadId);
+    const funnelId = cleanIdentifier(funnel_session_id || funnelSessionId);
+    const quoteId = cleanIdentifier(quote_session_id || quoteSessionId);
+    const intQuoteId = cleanIdentifier(internal_quote_id || internalQuoteId);
+    const metaId = cleanIdentifier(meta_event_id || metaEventId);
+
+    if (reqId) metadata.request_id = reqId;
+    if (leadUuid) metadata.lead_uuid = leadUuid;
+    if (funnelId) metadata.funnel_session_id = funnelId;
+    if (quoteId) metadata.quote_session_id = quoteId;
+    if (intQuoteId) metadata.internal_quote_id = intQuoteId;
+    if (metaId) metadata.meta_event_id = metaId;
+    metadata.payment_flow = flow;
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: finalAmount,
@@ -81,27 +139,8 @@ export const handler = async (event) => {
       customer: customer.id,
       setup_future_usage: 'off_session',
       receipt_email: email || undefined,
-      description: `G&G Cleaning — Booking Deposit (${serviceType || service || 'Cleaning'})`,
-      metadata: {
-        customer_name: name || 'Not provided',
-        customer_email: email || 'Not provided',
-        customer_phone: phone || 'Not provided',
-        customer_address: address || 'Not provided',
-        service_type: serviceType || service || 'Cleaning',
-        estimate_range: estimateRange || (estimateLow ? `$${estimateLow}–$${estimateHigh}` : 'N/A'),
-        addons: Array.isArray(addons) ? addons.join(', ') : (addons || 'None'),
-        booking_date: bookingDate || 'Pending Selection',
-        booking_time: preferredTime || bookingTime || 'Pending Selection',
-        priority_fee: urgencyFee ? `$${urgencyFee}` : '$0',
-        
-        // Metadata contract fields for webhook reconciliation
-        request_id: request_id || requestId || '',
-        lead_id: lead_id || leadId || '',
-        funnel_session_id: funnel_session_id || funnelSessionId || '',
-        quote_session_id: quote_session_id || quoteSessionId || '',
-        internal_quote_id: internal_quote_id || internalQuoteId || '',
-        meta_event_id: meta_event_id || metaEventId || '',
-      },
+      description: `G&G Cleaning Deposit`,
+      metadata,
     });
 
     return {
@@ -118,5 +157,3 @@ export const handler = async (event) => {
     };
   }
 };
-
-

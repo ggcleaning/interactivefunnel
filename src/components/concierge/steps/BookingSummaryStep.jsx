@@ -119,6 +119,7 @@ export function BookingSummaryStep({ data, estimate, onNext, onPrev }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: depositAmount * 100, // cents
+            payment_flow: 'concierge',
             name: `${data.firstName} ${data.lastName}`,
             email: data.email,
             phone: data.phone,
@@ -126,8 +127,9 @@ export function BookingSummaryStep({ data, estimate, onNext, onPrev }) {
             estimateRange: `$${estimate.min}-$${estimate.max}`,
             
             // Session and tracking contract
-            request_id: data.request_id,
-            lead_id: data.lead_id,
+            request_id: data.request_id || data.requestId,
+            lead_uuid: data.lead_uuid || data.lead_id,
+            lead_id: data.lead_id || data.lead_uuid,
             funnel_session_id: data.funnel_session_id,
             quote_session_id: data.quote_session_id,
             internal_quote_id: data.internal_quote_id,

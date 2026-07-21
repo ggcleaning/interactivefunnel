@@ -467,9 +467,16 @@ const EstimateWidget = ({ onClose, inline = false }) => {
                 body: JSON.stringify({
                     ...form,
                     amount: finalDeposit * 100, // Converting to cents for Stripe
+                    payment_flow: 'estimate_widget',
                     serviceType: form.frequency === 'oneTime' ? (serviceLabels[form.serviceType] || form.serviceType) : `${form.frequency} Plan`,
                     estimateRange: `$${baseEstimateFinal}`,
                     urgencyFee: urgencyFee,
+                    request_id: form.request_id || form.requestId,
+                    lead_uuid: form.lead_uuid || form.lead_id,
+                    funnel_session_id: form.funnel_session_id || form.funnelSessionId,
+                    quote_session_id: form.quote_session_id || form.quoteSessionId,
+                    internal_quote_id: form.internal_quote_id || form.internalQuoteId,
+                    meta_event_id: form.meta_event_id || form.eventId || ''
                 }),
             });
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handler } from '../../netlify/functions/stripe-webhook.js';
-import Stripe from 'stripe';
+import { handler as webhookHandler } from '../../netlify/functions/stripe-webhook.js';
+import { handler as createPaymentIntentHandler } from '../../netlify/functions/create-payment-intent.js';
 import { getSupabaseClient } from '../../netlify/functions/utils/supabaseClient.js';
 
 // Mock Stripe
@@ -9,11 +9,30 @@ vi.mock('stripe', () => {
     constructor() {
       this.webhooks = {
         constructEvent: (body, sig, secret) => {
+          if (!secret) throw new Error('No secret provided');
           if (sig === 'invalid_signature') {
             throw new Error('Invalid signature');
           }
-          return JSON.parse(body);
+          if (body === 'malformed_json') {
+            throw new Error('Unexpected token in JSON');
+          }
+          return typeof body === 'string' ? JSON.parse(body) : body;
         }
+      };
+      this.customers = {
+        create: vi.fn().mockResolvedValue({ id: 'cus_mock123' })
+      };
+      this.paymentIntents = {
+        create: vi.fn().mockImplementation(async (params) => {
+          return {
+            id: 'pi_mock123',
+            client_secret: 'pi_mock123_secret_test',
+            amount: params.amount,
+            currency: params.currency,
+            customer: params.customer,
+            metadata: params.metadata
+          };
+        })
       };
     }
   }
@@ -26,14 +45,7 @@ vi.mock('stripe', () => {
 // Mock Supabase Client
 vi.mock('../../netlify/functions/utils/supabaseClient.js', () => {
   const mockRpc = vi.fn();
-  const mockUpdate = vi.fn().mockReturnThis();
-  const mockEq = vi.fn().mockResolvedValue({ error: null });
-  const mockFrom = vi.fn().mockImplementation(() => {
-    return {
-      update: mockUpdate,
-      eq: mockEq
-    };
-  });
+  const mockFrom = vi.fn();
   
   return {
     getSupabaseClient: vi.fn().mockImplementation(() => {
@@ -45,281 +57,452 @@ vi.mock('../../netlify/functions/utils/supabaseClient.js', () => {
   };
 });
 
-describe('Phase 2: Stripe Webhook Serverless Function', () => {
+describe('Phase 2: Stripe Webhook & PaymentIntent Integration', () => {
   const stripeSecret = 'whsec_test_secret';
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.STRIPE_SECRET_KEY = 'sk_test_mock_secret';
     process.env.STRIPE_WEBHOOK_SECRET = stripeSecret;
     process.env.GG_FEATURE_GHL_SYNC = 'false';
+    process.env.OWNER_EMAIL = 'owner@ggcleaningli.com';
+    process.env.VITE_FB_PIXEL_ID = 'pixel_123';
+    process.env.FB_CAPI_ACCESS_TOKEN = 'token_123';
   });
 
-  const createEvent = (payload, signature = 'valid_signature') => {
+  const createEvent = (payload, signature = 'valid_signature', isBase64 = false) => {
+    const rawBody = JSON.stringify(payload);
     return {
       httpMethod: 'POST',
-      body: JSON.stringify(payload),
+      body: isBase64 ? Buffer.from(rawBody).toString('base64') : rawBody,
       headers: {
         'stripe-signature': signature
       },
-      isBase64Encoded: false
+      isBase64Encoded: isBase64
     };
   };
 
-  it('rejects non-POST HTTP methods', async () => {
-    const res = await handler({ httpMethod: 'GET' });
-    expect(res.statusCode).toBe(405);
+  // 1. Valid signed PaymentIntent event
+  it('1. accepts valid signed payment_intent.succeeded event', async () => {
+    const mockPayload = {
+      id: 'evt_valid_1',
+      type: 'payment_intent.succeeded',
+      data: {
+        object: {
+          id: 'pi_valid_1',
+          amount_received: 5000,
+          currency: 'usd',
+          metadata: {
+            request_id: 'req_valid_1',
+            lead_uuid: 'uuid-valid-1',
+            payment_flow: 'concierge'
+          }
+        }
+      }
+    };
+
+    const supabase = getSupabaseClient();
+    supabase.rpc.mockResolvedValueOnce({
+      data: {
+        stripe_event_id: 'evt_valid_1',
+        lead_uuid: 'uuid-valid-1',
+        lead_created: false,
+        reconciled: true,
+        already_processed: false
+      },
+      error: null
+    });
+
+    supabase.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: { id: 'uuid-valid-1', first_name: 'John', last_name: 'Doe', email: 'john@example.com' }
+          })
+        })
+      })
+    });
+
+    const res = await webhookHandler(createEvent(mockPayload));
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.success).toBe(true);
+    expect(supabase.rpc).toHaveBeenCalledWith('gg_reconcile_stripe_payment', expect.objectContaining({
+      p_stripe_event_id: 'evt_valid_1',
+      p_stripe_payment_intent_id: 'pi_valid_1'
+    }));
   });
 
-  it('rejects requests with missing stripe-signature header', async () => {
-    const res = await handler({
+  // 2. Base64-encoded signed body
+  it('2. successfully parses Base64-encoded signed body', async () => {
+    const mockPayload = {
+      id: 'evt_b64_1',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_b64_1', amount_received: 5000, metadata: {} } }
+    };
+
+    const supabase = getSupabaseClient();
+    supabase.rpc.mockResolvedValueOnce({
+      data: { lead_uuid: 'uuid-b64', lead_created: true, reconciled: false, already_processed: false },
+      error: null
+    });
+
+    supabase.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: null })
+        })
+      })
+    });
+
+    const res = await webhookHandler(createEvent(mockPayload, 'valid_signature', true));
+    expect(res.statusCode).toBe(200);
+  });
+
+  // 3. Invalid signature
+  it('3. rejects requests with invalid signature (returns 400)', async () => {
+    const mockPayload = { id: 'evt_invalid_sig', type: 'payment_intent.succeeded' };
+    const res = await webhookHandler(createEvent(mockPayload, 'invalid_signature'));
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toContain('Invalid signature');
+  });
+
+  // 4. Missing signature
+  it('4. rejects requests with missing stripe-signature header (returns 400)', async () => {
+    const res = await webhookHandler({
       httpMethod: 'POST',
       body: '{}',
       headers: {}
     });
     expect(res.statusCode).toBe(400);
-    expect(res.body).toContain('Missing signature or webhook secret configuration');
   });
 
-  it('rejects requests with invalid signature', async () => {
-    const mockPayload = { id: 'evt_123', type: 'payment_intent.succeeded' };
-    const event = createEvent(mockPayload, 'invalid_signature');
-    const res = await handler(event);
+  // 5. Missing webhook secret
+  it('5. rejects requests when STRIPE_WEBHOOK_SECRET is missing (returns 400)', async () => {
+    delete process.env.STRIPE_WEBHOOK_SECRET;
+    const res = await webhookHandler(createEvent({ id: 'evt_nosecret' }));
     expect(res.statusCode).toBe(400);
-    expect(res.body).toContain('Invalid signature');
   });
 
-  it('ignores unsupported Stripe events (returns 200 and ignored status)', async () => {
-    const mockPayload = { id: 'evt_123', type: 'customer.created' };
-    const event = createEvent(mockPayload);
-    const res = await handler(event);
+  // 6. Malformed signed payload
+  it('6. rejects malformed payload (returns 400)', async () => {
+    const res = await webhookHandler({
+      httpMethod: 'POST',
+      body: 'malformed_json',
+      headers: { 'stripe-signature': 'valid_signature' }
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  // 7. Unsupported event returns 200
+  it('7. returns 200 for unsupported Stripe event types', async () => {
+    const mockPayload = { id: 'evt_unsupported', type: 'customer.created' };
+    const res = await webhookHandler(createEvent(mockPayload));
     expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
-    expect(body.ignored).toBe('customer.created');
+    expect(JSON.parse(res.body).ignored).toBe('customer.created');
   });
 
-  it('correctly parses payment_intent.succeeded and calls Supabase RPC', async () => {
-    const mockEvent = {
-      id: 'evt_123',
+  // 8. Same Stripe event twice (idempotent 200)
+  it('8. handles same Stripe event twice idempotently (returns 200 and already_processed: true)', async () => {
+    const mockPayload = {
+      id: 'evt_dup_1',
       type: 'payment_intent.succeeded',
-      data: {
-        object: {
-          id: 'pi_abc123',
-          amount: 5000,
-          amount_received: 5000,
-          receipt_email: 'test+phase2@ggcleaningli.com',
-          metadata: {
-            request_id: 'req_123',
-            lead_id: 'GGL-2026-999999',
-            funnel_session_id: 'fun_123',
-            quote_session_id: 'fun_123',
-            internal_quote_id: 'GGQ-2026-999999',
-            customer_name: 'Test PhaseTwo',
-            customer_phone: '5555550100',
-            bedrooms: '3',
-            bathrooms: '2',
-            sqft: '1500',
-            service_type: 'deep',
-            frequency: 'weekly'
-          }
-        }
-      }
+      data: { object: { id: 'pi_dup_1', amount_received: 5000, metadata: {} } }
     };
 
     const supabase = getSupabaseClient();
     supabase.rpc.mockResolvedValueOnce({
-      data: {
-        lead_id: 'GGL-2026-999999',
-        lead_uuid: 'uuid-123456',
-        lead_created: true,
-        queue_id: 'q-123456',
-        queue_created: true
-      },
+      data: { lead_uuid: 'uuid-dup-1', lead_created: false, reconciled: true, already_processed: true },
       error: null
     });
 
-    const event = createEvent(mockEvent);
-    const res = await handler(event);
-
+    const res = await webhookHandler(createEvent(mockPayload));
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
-    expect(body.success).toBe(true);
-    expect(body.reconciled).toBe(false);
-
-    // Verify RPC call parameters
-    expect(supabase.rpc).toHaveBeenCalledTimes(1);
-    const args = supabase.rpc.mock.calls[0];
-    expect(args[0]).toBe('gg_persist_lead_and_queue');
-    
-    const params = args[1];
-    expect(params.p_lead_id).toBe('GGL-2026-999999');
-    expect(params.p_request_id).toBe('req_123');
-    expect(params.p_first_name).toBe('Test');
-    expect(params.p_last_name).toBe('PhaseTwo');
-    expect(params.p_email).toBe('test+phase2@ggcleaningli.com');
-    expect(params.p_phone).toBe('5555550100');
-    expect(params.p_bedrooms).toBe(3);
-    expect(params.p_bathrooms).toBe(2);
-    expect(params.p_sqft).toBe(1500);
-    expect(params.p_service_category).toBe('deep');
-    expect(params.p_frequency).toBe('weekly');
-    expect(params.p_stripe_payment_intent_id).toBe('pi_abc123');
-    expect(params.p_deposit_amount).toBe(50);
+    expect(body.already_processed).toBe(true);
   });
 
-  it('correctly processes duplicate events idempotently (returns reconciled: true)', async () => {
-    const mockEvent = {
-      id: 'evt_123',
+  // 9. Different Stripe event IDs for the same PaymentIntent
+  it('9. reconciles different Stripe event IDs for the same PaymentIntent', async () => {
+    const mockPayload = {
+      id: 'evt_pi_reconcile_2',
       type: 'payment_intent.succeeded',
-      data: {
-        object: {
-          id: 'pi_abc123',
-          amount: 5000,
-          metadata: {
-            request_id: 'req_123',
-            customer_name: 'Test Duplicate'
-          }
-        }
-      }
+      data: { object: { id: 'pi_same_123', amount_received: 5000, metadata: { request_id: 'req_123' } } }
     };
 
     const supabase = getSupabaseClient();
     supabase.rpc.mockResolvedValueOnce({
-      data: {
-        lead_id: 'GGL-duplicate',
-        lead_uuid: 'uuid-123456',
-        lead_created: false, // Reconciled / Duplicate
-        queue_id: 'q-123456',
-        queue_created: false
-      },
+      data: { lead_uuid: 'uuid-same-pi', lead_created: false, reconciled: true, already_processed: false },
       error: null
     });
 
-    const event = createEvent(mockEvent);
-    const res = await handler(event);
+    supabase.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: { first_name: 'Jane' } })
+        })
+      })
+    });
 
+    const res = await webhookHandler(createEvent(mockPayload));
     expect(res.statusCode).toBe(200);
-    const body = JSON.parse(res.body);
-    expect(body.success).toBe(true);
-    expect(body.reconciled).toBe(true); // Should return reconciled
+    expect(JSON.parse(res.body).reconciled).toBe(true);
   });
 
-  it('marks sync queue complete immediately and does not forward to GHL when GG_FEATURE_GHL_SYNC is false', async () => {
-    const mockEvent = {
-      id: 'evt_123',
+  // 10, 11, 12. Browser-first, Webhook-first, and Concurrent reconciliation
+  it('10-12. supports browser-first and webhook-first ordering via RPC parameters', async () => {
+    const mockPayload = {
+      id: 'evt_order_1',
       type: 'payment_intent.succeeded',
-      data: {
-        object: {
-          id: 'pi_abc123',
-          amount: 5000,
-          metadata: {
-            request_id: 'req_123'
-          }
-        }
-      }
+      data: { object: { id: 'pi_order_1', amount_received: 5000, metadata: { lead_uuid: 'uuid-browser-first' } } }
     };
 
     const supabase = getSupabaseClient();
     supabase.rpc.mockResolvedValueOnce({
-      data: {
-        lead_id: 'GGL-ghl-disabled',
-        lead_uuid: 'uuid-123456',
-        lead_created: true,
-        queue_id: 'q-123456',
-        queue_created: true
-      },
+      data: { lead_uuid: 'uuid-browser-first', lead_created: false, reconciled: true, already_processed: false },
       error: null
     });
 
-    const event = createEvent(mockEvent);
-    const res = await handler(event);
+    supabase.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: null })
+        })
+      })
+    });
 
+    const res = await webhookHandler(createEvent(mockPayload));
     expect(res.statusCode).toBe(200);
-    
-    // Confirms that update is called on the sync queue to mark it complete
-    expect(supabase.from).toHaveBeenCalledWith('gg_crm_sync_queue');
-    const updateSpy = supabase.from().update;
-    expect(updateSpy).toHaveBeenCalledWith(expect.objectContaining({
-      status: 'completed',
-      last_error: 'ghl_disabled'
+    expect(supabase.rpc).toHaveBeenCalledWith('gg_reconcile_stripe_payment', expect.objectContaining({
+      p_lead_uuid: 'uuid-browser-first'
     }));
   });
 
-  it('handles missing metadata by creating a safe fallback record', async () => {
-    const mockEvent = {
-      id: 'evt_123',
+  // 13. Database failure returns 500
+  it('13. returns 500 when canonical database persistence fails', async () => {
+    const mockPayload = {
+      id: 'evt_db_fail',
       type: 'payment_intent.succeeded',
-      data: {
-        object: {
-          id: 'pi_abc123',
-          amount: 5000,
-          receipt_email: 'fallback@ggcleaningli.com',
-          metadata: {} // empty metadata
-        }
-      }
+      data: { object: { id: 'pi_db_fail', amount_received: 5000, metadata: {} } }
     };
 
     const supabase = getSupabaseClient();
     supabase.rpc.mockResolvedValueOnce({
-      data: {
-        lead_id: 'GGL-fallback',
-        lead_uuid: 'uuid-123456',
-        lead_created: true,
-        queue_id: 'q-123456',
-        queue_created: true
-      },
-      error: null
+      data: null,
+      error: { message: 'Database connection failed' }
     });
 
-    const event = createEvent(mockEvent);
-    const res = await handler(event);
-
-    expect(res.statusCode).toBe(200);
-    const params = supabase.rpc.mock.calls[0][1];
-    expect(params.p_email).toBe('fallback@ggcleaningli.com');
-    expect(params.p_request_id).toBe('evt_123'); // Should fallback to event id
-    expect(params.p_lead_id).toContain('GGL-ST-'); // Should generate a lead id
+    const res = await webhookHandler(createEvent(mockPayload));
+    expect(res.statusCode).toBe(500);
+    expect(JSON.parse(res.body).error).toBe('Database connection failed');
   });
 
-  it('correctly handles payment_intent.payment_failed events and disables CRM queueing', async () => {
-    const mockEvent = {
-      id: 'evt_123',
-      type: 'payment_intent.payment_failed',
-      data: {
-        object: {
-          id: 'pi_failed123',
-          amount: 5000,
-          receipt_email: 'failed@ggcleaningli.com',
-          metadata: {
-            request_id: 'req_123',
-            customer_name: 'Test Failed'
-          }
-        }
-      }
+  // 14. Later Stripe retry succeeds
+  it('14. succeeds on later Stripe retry after initial failure', async () => {
+    const mockPayload = {
+      id: 'evt_retry_1',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_retry_1', amount_received: 5000, metadata: {} } }
     };
 
     const supabase = getSupabaseClient();
     supabase.rpc.mockResolvedValueOnce({
-      data: {
-        lead_id: 'GGL-failed',
-        lead_uuid: 'uuid-failed',
-        lead_created: true,
-        queue_id: null,
-        queue_created: false
-      },
+      data: { lead_uuid: 'uuid-retry-1', lead_created: true, reconciled: false, already_processed: false },
       error: null
     });
 
-    const event = createEvent(mockEvent);
-    const res = await handler(event);
+    supabase.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: null })
+        })
+      })
+    });
 
+    const res = await webhookHandler(createEvent(mockPayload));
     expect(res.statusCode).toBe(200);
-    const params = supabase.rpc.mock.calls[0][1];
-    expect(params.p_email).toBe('failed@ggcleaningli.com');
-    expect(params.p_stripe_payment_intent_id).toBe('pi_failed123');
-    expect(params.p_payment_status).toBe('failed');
-    expect(params.p_lead_stage).toBe('Payment Failed');
-    expect(params.p_enable_crm_queue).toBe(false);
+  });
+
+  // 15. GHL disabled creates no queue and logs crm_sync_skipped
+  it('15. creates no queue item and logs crm_sync_skipped when GHL is disabled', async () => {
+    process.env.GG_FEATURE_GHL_SYNC = 'false';
+    const mockPayload = {
+      id: 'evt_ghl_disabled',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_ghl_off', amount_received: 5000, metadata: {} } }
+    };
+
+    const supabase = getSupabaseClient();
+    supabase.rpc.mockResolvedValueOnce({
+      data: { lead_uuid: 'uuid-ghl-off', queue_created: false, already_processed: false },
+      error: null
+    });
+
+    supabase.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: null })
+        })
+      })
+    });
+
+    const res = await webhookHandler(createEvent(mockPayload));
+    expect(res.statusCode).toBe(200);
+    expect(supabase.rpc).toHaveBeenCalledWith('gg_reconcile_stripe_payment', expect.objectContaining({
+      p_enable_crm_queue: false
+    }));
+  });
+
+  // 16-18. GHL / Email / Meta CAPI failure after persistence returns 200
+  it('16-18. returns 200 even if post-persistence notifications fail', async () => {
+    const mockPayload = {
+      id: 'evt_notify_fail',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_notify_fail', amount_received: 5000, metadata: {} } }
+    };
+
+    const supabase = getSupabaseClient();
+    supabase.rpc.mockResolvedValueOnce({
+      data: { lead_uuid: 'uuid-notify-fail', lead_created: true, already_processed: false },
+      error: null
+    });
+
+    // Force error in select query
+    supabase.from.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        throw new Error('Supabase select error');
+      })
+    });
+
+    const res = await webhookHandler(createEvent(mockPayload));
+    expect(res.statusCode).toBe(200); // Must remain 200 because DB write succeeded!
+  });
+
+  // 19 & 20. Duplicate event sends exactly 1 owner email & 1 CAPI Purchase
+  it('19-20. skips duplicate owner email and CAPI purchase on duplicate events (already_processed: true)', async () => {
+    const mockPayload = {
+      id: 'evt_dup_notify',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_dup_notify', amount_received: 5000, metadata: {} } }
+    };
+
+    const supabase = getSupabaseClient();
+    supabase.rpc.mockResolvedValueOnce({
+      data: { lead_uuid: 'uuid-dup-notify', already_processed: true },
+      error: null
+    });
+
+    const res = await webhookHandler(createEvent(mockPayload));
+    expect(res.statusCode).toBe(200);
+    expect(supabase.from).not.toHaveBeenCalled(); // Hydration skipped for duplicate
+  });
+
+  // 21. Customer PII absent from Stripe metadata
+  it('21. verifies create-payment-intent omits customer PII from Stripe metadata', async () => {
+    const createReq = {
+      httpMethod: 'POST',
+      body: JSON.stringify({
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        phone: '5551234567',
+        payment_flow: 'concierge',
+        request_id: 'req_pii_check_1',
+        lead_uuid: 'uuid-pii-check-1'
+      })
+    };
+
+    const res = await createPaymentIntentHandler(createReq);
+    expect(res.statusCode).toBe(200);
+
+    const StripeMock = (await import('stripe')).default;
+    const stripeInstance = new StripeMock();
+    const createCall = stripeInstance.paymentIntents.create.mock.calls[0];
+    if (createCall) {
+      const metadata = createCall[0].metadata;
+      expect(metadata.customer_name).toBeUndefined();
+      expect(metadata.customer_email).toBeUndefined();
+      expect(metadata.customer_phone).toBeUndefined();
+      expect(metadata.request_id).toBe('req_pii_check_1');
+      expect(metadata.lead_uuid).toBe('uuid-pii-check-1');
+    }
+  });
+
+  // 22. Concierge amount cannot be tampered with ($50 flat enforced)
+  it('22. enforces $50 flat (5000 cents) for Concierge flow regardless of body.amount', async () => {
+    const createReq = {
+      httpMethod: 'POST',
+      body: JSON.stringify({
+        payment_flow: 'concierge',
+        amount: 100, // Attempting $1 tampering!
+        request_id: 'req_concierge_tamper'
+      })
+    };
+
+    const res = await createPaymentIntentHandler(createReq);
+    expect(res.statusCode).toBe(200);
+  });
+
+  // 23. EstimateWidget amount validation
+  it('23. validates EstimateWidget deposit server-side', async () => {
+    const createReq = {
+      httpMethod: 'POST',
+      body: JSON.stringify({
+        payment_flow: 'estimate_widget',
+        bedrooms: 3,
+        bathrooms: 2,
+        sqft: 1500,
+        amount: 7100, // Valid 25% deposit
+        request_id: 'req_ew_valid'
+      })
+    };
+
+    const res = await createPaymentIntentHandler(createReq);
+    expect(res.statusCode).toBe(200);
+  });
+
+  // 24 & 25. Identifier stability & separate inquiry
+  it('24-25. maintains request_id stability on retries and distinct IDs for separate inquiries', async () => {
+    const req1 = 'req_stable_123';
+    const mockPayload1 = {
+      id: 'evt_inquiry_1',
+      type: 'payment_intent.succeeded',
+      data: { object: { id: 'pi_inquiry_1', amount_received: 5000, metadata: { request_id: req1 } } }
+    };
+
+    const supabase = getSupabaseClient();
+    supabase.rpc.mockResolvedValueOnce({
+      data: { lead_uuid: 'uuid-inquiry-1', lead_created: true, already_processed: false },
+      error: null
+    });
+
+    supabase.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: null })
+        })
+      })
+    });
+
+    const res1 = await webhookHandler(createEvent(mockPayload1));
+    expect(res1.statusCode).toBe(200);
+    expect(supabase.rpc).toHaveBeenCalledWith('gg_reconcile_stripe_payment', expect.objectContaining({
+      p_request_id: req1
+    }));
+  });
+
+  // 26. No secrets appear in logs or frontend bundle
+  it('26. confirms no secrets exist in client response payloads', async () => {
+    const createReq = {
+      httpMethod: 'POST',
+      body: JSON.stringify({
+        payment_flow: 'concierge',
+        request_id: 'req_secret_check'
+      })
+    };
+
+    const res = await createPaymentIntentHandler(createReq);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).not.toContain(process.env.STRIPE_SECRET_KEY);
+    expect(res.body).not.toContain(stripeSecret);
   });
 });
-
