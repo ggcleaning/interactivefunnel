@@ -32,7 +32,8 @@
         "npm:react-router-dom@^7.13.1",
         "npm:react@^19.2.0",
         "npm:stripe@^20.4.1",
-        "npm:vite@^7.2.4"
+        "npm:vite@^7.2.4",
+        "npm:vitest@^4.1.10"
       ]
     }
   }

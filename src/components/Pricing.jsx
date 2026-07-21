@@ -5,6 +5,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from './CheckoutForm';
 import PlanCompareModal from './PlanCompareModal';
 import { BUSINESS, PACKAGES, ADDONS, RECURRING_PLANS, SAVINGS_PERKS, COMMERCIAL_SERVICES, PLAN_NOTES } from '../data/config';
+import { generateInternalQuoteId, generateRequestId, generateFunnelSessionId } from '../utils/idGenerator';
 import './Pricing.css';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -28,6 +29,7 @@ const Pricing = () => {
     const handleSelectPlan = async (plan) => {
         setSelectedPlan(plan);
         setCheckoutStep('loading');
+        const sessionId = generateInternalQuoteId();
         try {
             const res = await fetch('/.netlify/functions/create-payment-intent', {
                 method: 'POST',
@@ -37,6 +39,11 @@ const Pricing = () => {
                     name: plan.name,
                     email: '',
                     service: plan.name,
+                    
+                    quote_session_id: sessionId,
+                    internal_quote_id: sessionId,
+                    request_id: generateRequestId(),
+                    funnel_session_id: generateFunnelSessionId()
                 }),
             });
             const data = await res.json();

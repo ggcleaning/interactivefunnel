@@ -7,6 +7,7 @@ import { X, Calendar, MapPin, Phone, Mail, User, Clock } from 'lucide-react';
 import { sendToCRM } from '../utils/crm';
 import emailjs from '@emailjs/browser';
 import { BUSINESS } from '../data/config';
+import { generateInternalQuoteId, generateRequestId, generateFunnelSessionId } from '../utils/idGenerator';
 import './BookingInfoModal.css';
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -32,6 +33,21 @@ const BookingInfoModal = ({ isOpen, onClose, plan, onSuccess }) => {
       setStep('info');
       setError('');
       setClientSecret('');
+    } else {
+      const sessionId = generateInternalQuoteId();
+      setForm(f => ({
+        ...f,
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        preferredTime: 'Morning',
+        marketingOptIn: true,
+        quote_session_id: sessionId,
+        internal_quote_id: sessionId,
+        funnel_session_id: generateFunnelSessionId(),
+        request_id: generateRequestId()
+      }));
     }
   }, [isOpen]);
 

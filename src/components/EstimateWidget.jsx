@@ -11,6 +11,7 @@ import PhotoQuoteFlow from './PhotoQuoteFlow';
 import { sendToCRM } from '../utils/crm';
 import { trackConversion } from '../utils/metaTracking';
 import { BUSINESS } from '../data/config';
+import { generateInternalQuoteId, generateRequestId, generateFunnelSessionId } from '../utils/idGenerator';
 import TrustBar from './modular/TrustBar';
 import { 
     Wand2, 
@@ -255,10 +256,15 @@ const EstimateWidget = ({ onClose, inline = false }) => {
     const prefName = searchParams.get('fname') || '';
     const prefPhone = searchParams.get('phone') || '';
 
+    const sessionId = generateInternalQuoteId();
     const initialForm = {
         ...INITIAL_FORM_STATE,
         name: prefName,
         phone: prefPhone,
+        quote_session_id: sessionId,
+        internal_quote_id: sessionId,
+        funnel_session_id: generateFunnelSessionId(),
+        request_id: generateRequestId()
     };
 
     const [form, setForm] = useState(initialForm);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { generateInternalQuoteId } from '../../../utils/idGenerator';
+import { generateInternalQuoteId, generateRequestId, generateFunnelSessionId } from '../../../utils/idGenerator';
 import { sendToCRM } from '../../../utils/crm';
 
 function getUtmParams() {
@@ -35,8 +35,10 @@ export function LeadCaptureStep({ data, onChange, onNext }) {
     setIsSubmitting(true);
 
     try {
-      // 1. Generate or retrieve unique quote_session_id
+      // 1. Generate or retrieve unique quote_session_id, request_id, funnel_session_id
       const sessionId = data.quote_session_id || data.internal_quote_id || generateInternalQuoteId();
+      const requestId = data.request_id || generateRequestId();
+      const funnelSessionId = data.funnel_session_id || generateFunnelSessionId();
       
       // 2. Parse UTMs and Page URL
       const utms = getUtmParams();
@@ -46,6 +48,8 @@ export function LeadCaptureStep({ data, onChange, onNext }) {
       const updatedData = {
         quote_session_id: sessionId,
         internal_quote_id: sessionId,
+        request_id: requestId,
+        funnel_session_id: funnelSessionId,
         utm_source: utms.utm_source,
         utm_medium: utms.utm_medium,
         utm_campaign: utms.utm_campaign,
@@ -81,6 +85,8 @@ export function LeadCaptureStep({ data, onChange, onNext }) {
         zip_code: data.zipCode,
         quote_session_id: sessionId,
         internal_quote_id: sessionId,
+        request_id: requestId,
+        funnel_session_id: funnelSessionId,
         source: "Website Quote Funnel",
         page_url: currentUrl,
         utm_source: utms.utm_source,
@@ -101,6 +107,8 @@ export function LeadCaptureStep({ data, onChange, onNext }) {
       
       if (!res.success) {
         console.warn('[CRM Proxy Warning] Primary lead capture forwarding failed, fallback triggered', res.error);
+      } else if (res.lead_id) {
+        onChange({ lead_id: res.lead_id, lead_uuid: res.lead_uuid });
       }
 
       // 6. Transition to Step 2 regardless of GHL response success
@@ -112,6 +120,7 @@ export function LeadCaptureStep({ data, onChange, onNext }) {
     } finally {
       setIsSubmitting(false);
     }
+
   };
 
   return (

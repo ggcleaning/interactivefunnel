@@ -123,7 +123,15 @@ export function BookingSummaryStep({ data, estimate, onNext, onPrev }) {
             email: data.email,
             phone: data.phone,
             serviceType: data.serviceCategory,
-            estimateRange: `$${estimate.min}-$${estimate.max}`
+            estimateRange: `$${estimate.min}-$${estimate.max}`,
+            
+            // Session and tracking contract
+            request_id: data.request_id,
+            lead_id: data.lead_id,
+            funnel_session_id: data.funnel_session_id,
+            quote_session_id: data.quote_session_id,
+            internal_quote_id: data.internal_quote_id,
+            meta_event_id: data.meta_event_id || data.eventId || ''
           }),
         });
 

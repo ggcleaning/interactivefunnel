@@ -45,7 +45,21 @@ export const handler = async (event) => {
       bookingTime, 
       preferredTime,
       urgencyFee,
-      amount // Optional override if sent from Pricing Page
+      amount, // Optional override if sent from Pricing Page
+      
+      // Metadata contract parameters
+      request_id,
+      requestId,
+      lead_id,
+      leadId,
+      funnel_session_id,
+      funnelSessionId,
+      quote_session_id,
+      quoteSessionId,
+      internal_quote_id,
+      internalQuoteId,
+      meta_event_id,
+      metaEventId
     } = body;
 
     // Use amount from body (if provided) or default to 5000 cents ($50)
@@ -79,6 +93,14 @@ export const handler = async (event) => {
         booking_date: bookingDate || 'Pending Selection',
         booking_time: preferredTime || bookingTime || 'Pending Selection',
         priority_fee: urgencyFee ? `$${urgencyFee}` : '$0',
+        
+        // Metadata contract fields for webhook reconciliation
+        request_id: request_id || requestId || '',
+        lead_id: lead_id || leadId || '',
+        funnel_session_id: funnel_session_id || funnelSessionId || '',
+        quote_session_id: quote_session_id || quoteSessionId || '',
+        internal_quote_id: internal_quote_id || internalQuoteId || '',
+        meta_event_id: meta_event_id || metaEventId || '',
       },
     });
 
