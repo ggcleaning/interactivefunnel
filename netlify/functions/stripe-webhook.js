@@ -40,7 +40,7 @@ const hashData = (data) => {
 };
 
 async function sendMetaCapiPurchase({ email, phone, firstName, lastName, city, zip, amountUsd, stripePaymentIntentId }) {
-  const PIXEL_ID = process.env.VITE_FB_PIXEL_ID;
+  const PIXEL_ID = process.env.FB_PIXEL_ID || process.env.VITE_FB_PIXEL_ID;
   const ACCESS_TOKEN = process.env.FB_CAPI_ACCESS_TOKEN;
   if (!PIXEL_ID || !ACCESS_TOKEN) {
     console.warn('[stripe-webhook] Missing FB CAPI credentials. Skipping CAPI Purchase event.');

@@ -4,6 +4,7 @@
 
 [build.environment]
   GG_FEATURE_GHL_SYNC = "true"
+  GG_FEATURE_META_CAPI = "true"
 
 
 [functions]
