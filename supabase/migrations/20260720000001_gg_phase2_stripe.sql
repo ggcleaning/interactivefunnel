@@ -209,7 +209,7 @@ BEGIN
 
     -- 4. Queue downstream CRM delivery if enabled; otherwise log crm_sync_skipped
     IF p_enable_crm_queue AND p_crm_payload IS NOT NULL AND p_payment_status <> 'failed' THEN
-        v_idempotency_key := v_lead_id || '::' || p_crm_integration || '::' || p_crm_event_type;
+        v_idempotency_key := v_lead_id || '::' || COALESCE(p_stripe_payment_intent_id, p_stripe_event_id) || '::' || p_crm_integration || '::' || p_crm_event_type;
 
         INSERT INTO public.gg_crm_sync_queue (
             lead_id, integration, event_type,

@@ -62,6 +62,10 @@ describe('Phase 2: Stripe Webhook & PaymentIntent Integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, message: 'Mocked fetch response' })
+    });
     process.env.STRIPE_SECRET_KEY = 'sk_test_mock_secret';
     process.env.STRIPE_WEBHOOK_SECRET = stripeSecret;
     process.env.GG_FEATURE_GHL_SYNC = 'false';

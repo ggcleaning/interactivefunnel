@@ -93,16 +93,10 @@ export const handler = async (event) => {
 
     if (flow === 'estimate_widget') {
       const serverCalcAmount = calculateEstimateDeposit(body);
-      if (typeof amount === 'number' && amount > 0) {
-        // Validate amount is within expected range of server calculation (+/- $5 for roundings/addons)
-        const diff = Math.abs(amount - serverCalcAmount);
-        if (diff <= 500) {
-          finalAmount = amount;
-        } else {
-          finalAmount = serverCalcAmount;
-        }
-      } else {
-        finalAmount = serverCalcAmount;
+      finalAmount = serverCalcAmount; // Server calculation ALWAYS dictates the charge
+
+      if (typeof amount === 'number' && amount > 0 && amount !== serverCalcAmount) {
+        console.warn(`[create-payment-intent] Diagnostic notice: Client requested ${amount} cents, server calculated ${serverCalcAmount} cents. Server calculation enforced.`);
       }
     } else {
       // Concierge flow: strictly $50 (5000 cents)
