@@ -64,6 +64,7 @@ const QuotePage = () => {
     
     // 2. Exit intent logic
     const handleMouseLeave = (e) => {
+      if (currentStep !== 'lead-capture') return;
       if (e.clientY <= 0 && !exitIntentTriggered) {
         setShowExitIntent(true);
         setExitIntentTriggered(true);
@@ -72,6 +73,7 @@ const QuotePage = () => {
     
     // Mobile Inactivity Timer (45s)
     const inactivityTimer = setTimeout(() => {
+      if (currentStep !== 'lead-capture') return;
       if (!exitIntentTriggered && !showExitIntent) {
         setShowExitIntent(true);
         setExitIntentTriggered(true);
@@ -96,7 +98,7 @@ const QuotePage = () => {
       window.removeEventListener('ew_step_change', handleStepChange);
       clearTimeout(inactivityTimer);
     }
-  }, [exitIntentTriggered]);
+  }, [exitIntentTriggered, currentStep]);
 
   const copy = AUDIENCE_COPY[audience];
 
@@ -160,7 +162,7 @@ const QuotePage = () => {
 
 
       {/* EXIT INTENT POPUP */}
-      {showExitIntent && !isConfirmed && (
+      {showExitIntent && currentStep === 'lead-capture' && !isConfirmed && (
         <div className="qf-exit-overlay">
           <div className="qf-exit-modal glass-card">
             <button className="qf-exit-close" onClick={() => setShowExitIntent(false)}>✕</button>

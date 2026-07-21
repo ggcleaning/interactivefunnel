@@ -41,37 +41,50 @@ export const handler = async (event) => {
         if (!targetUrl) {
             console.error('[CRM Proxy] No target URL configured for type:', type);
             return {
-                statusCode: 500,
+                statusCode: 400,
                 headers,
-                body: JSON.stringify({ success: false, error: 'CRM Webhook not configured' })
+                body: JSON.stringify({ success: false, error: 'CRM webhook environment variable is missing' })
             };
         }
 
-        console.log(`[CRM Proxy] Forwarding ${type} event to GHL...`);
+        console.log(`[CRM Proxy] Forwarding ${type} event to CRM...`);
 
-        const response = await fetch(targetUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
+        try {
+            const response = await fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`GHL Webhook returned ${response.status}: ${errorText}`);
+            if (!response.ok) {
+                console.error(`[CRM Proxy] CRM Webhook returned status ${response.status}`);
+                return {
+                    statusCode: 502,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'CRM forwarding failed' })
+                };
+            }
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({ success: true, message: 'Lead forwarded to CRM' })
+            };
+        } catch (fetchError) {
+            console.error('[CRM Proxy] Fetch error:', fetchError);
+            return {
+                statusCode: 502,
+                headers,
+                body: JSON.stringify({ success: false, error: 'CRM forwarding failed' })
+            };
         }
 
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ success: true })
-        };
-
     } catch (error) {
-        console.error('[CRM Proxy] Error:', error);
+        console.error('[CRM Proxy] Error parsing body or internal error:', error);
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ success: false, error: error.message })
+            body: JSON.stringify({ success: false, error: 'CRM forwarding failed' })
         };
     }
 };

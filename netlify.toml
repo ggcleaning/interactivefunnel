@@ -2,6 +2,10 @@
   command = "npm run build"
   publish = "dist"
 
+[build.environment]
+  GG_FEATURE_GHL_SYNC = "false"
+
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
@@ -14,8 +18,38 @@
   targetPort = 5173
   autoLaunch = false
 
+# G&G Phase 1: CRM Queue Worker — runs every 15 minutes
+# Processes pending items in gg_crm_sync_queue and delivers to GHL.
+# NOTE: Scheduled functions do NOT run on deploy previews.
+# For preview testing, use manual POST with x-admin-secret header.
+[functions."process-crm-queue"]
+  schedule = "*/15 * * * *"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
+# ==========================================================================
+# REQUIRED NETLIFY ENVIRONMENT VARIABLES (set in Netlify Dashboard)
+# ==========================================================================
+# Phase 1 — Lead Persistence:
+#   SUPABASE_URL                  — Supabase project URL
+#   SUPABASE_SERVICE_ROLE_KEY     — Supabase service role key (NOT anon key)
+#   INTERNAL_ADMIN_SECRET         — Secret for manual queue worker invocation
+#
+# Phase 1 — Feature Flags (all default to 'true' if missing):
+#   GG_FEATURE_SUPABASE_PERSIST   — Controls fallback on RPC failure (true=graceful, false=strict)
+#   GG_FEATURE_CRM_QUEUE          — Controls queue entry creation (true=queue, false=skip queue)
+#   GG_FEATURE_GHL_SYNC           — Controls GHL delivery (true=deliver, false=mark completed)
+#
+# Existing — GHL Webhooks (already configured):
+#   GHL_WEBHOOK_URL               — Primary GHL webhook
+#   GHL_BOOKING_WEBHOOK_URL       — Booking-specific webhook
+#   GHL_QUOTE_WEBHOOK_URL         — Quote-specific webhook
+#   GHL_FB_ADS_WEBHOOK_URL        — Facebook Ads webhook
+#
+# Existing — Emergency Notifications:
+#   OWNER_EMAIL                   — Emergency notification recipient
+#   SMTP_USER                     — SMTP sender
+#   SMTP_APP_PASS                 — SMTP app password
