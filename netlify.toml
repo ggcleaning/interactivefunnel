@@ -2,7 +2,7 @@
   command = "npm run build"
   publish = "dist"
 
-[context.deploy-preview.environment]
+[build.environment]
   GG_FEATURE_GHL_SYNC = "false"
 
 
