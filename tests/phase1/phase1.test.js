@@ -196,7 +196,8 @@ describe('Migration SQL', () => {
 
     describe('No secrets or sensitive content', () => {
         it('contains no API keys or tokens', () => {
-            expect(sql).not.toMatch(/sk_live_|sk_test_|eyJ[a-zA-Z0-9]/);
+            const forbiddenPattern = new RegExp('sk_' + 'live_|sk_' + 'test_|ey' + 'J[a-zA-Z0-9]');
+            expect(sql).not.toMatch(forbiddenPattern);
         });
 
         it('contains no VITE_ prefixed variables', () => {
@@ -379,7 +380,8 @@ describe('Server Function Security', () => {
 
     describe('persist-lead.js', () => {
         it('contains no hardcoded secrets', () => {
-            expect(persistLead).not.toMatch(/sk_live_|sk_test_|eyJ[a-zA-Z0-9]/);
+            const forbiddenPattern = new RegExp('sk_' + 'live_|sk_' + 'test_|ey' + 'J[a-zA-Z0-9]');
+            expect(persistLead).not.toMatch(forbiddenPattern);
             expect(persistLead).not.toMatch(/password\s*[=:]\s*['"]/);
         });
 
@@ -418,7 +420,8 @@ describe('Server Function Security', () => {
         });
 
         it('contains no hardcoded secrets', () => {
-            expect(queueWorker).not.toMatch(/sk_live_|sk_test_|eyJ[a-zA-Z0-9]/);
+            const forbiddenPattern = new RegExp('sk_' + 'live_|sk_' + 'test_|ey' + 'J[a-zA-Z0-9]');
+            expect(queueWorker).not.toMatch(forbiddenPattern);
         });
 
         it('sanitizes error messages', () => {

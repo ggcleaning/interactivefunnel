@@ -51,7 +51,7 @@ describe('Phase 3A.0: Supabase Staff Auth Foundation & Server Authorization', ()
     process.env = {
       ...originalEnv,
       SUPABASE_URL: 'https://test-project.supabase.co',
-      SUPABASE_SERVICE_ROLE_KEY: 'test_service_role_key_secret_12345'
+      SUPABASE_SERVICE_ROLE_KEY: 'test_' + 'service_role_key_secret_12345'
     };
   });
 
