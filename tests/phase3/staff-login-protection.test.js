@@ -20,19 +20,38 @@ describe('Phase 3A.0.3: Staff Login, Verified Route Protection, and Logout', () 
       expect(sanitizeRedirectUrl('/internal-quote?quote=GGQ-2026-104928')).toBe('/internal-quote?quote=GGQ-2026-104928');
     });
 
-    it('4. Rejects external URLs and domain redirects', () => {
-      expect(sanitizeRedirectUrl('https://evil.com')).toBe('/operations');
+    it('4. Rejects /staff-login and nested /staff-login return destinations', () => {
+      expect(sanitizeRedirectUrl('/staff-login')).toBe('/operations');
+      expect(sanitizeRedirectUrl('/staff-login?returnTo=/staff-login')).toBe('/operations');
+      expect(sanitizeRedirectUrl('/staff-login/deep')).toBe('/operations');
+    });
+
+    it('5. Rejects external URLs and domain redirects', () => {
+      expect(sanitizeRedirectUrl('https://evil.example')).toBe('/operations');
       expect(sanitizeRedirectUrl('http://malicious.org/internal-quote')).toBe('/operations');
     });
 
-    it('5. Rejects protocol-relative links (//)', () => {
+    it('6. Rejects protocol-relative links (//)', () => {
+      expect(sanitizeRedirectUrl('//evil.example')).toBe('/operations');
       expect(sanitizeRedirectUrl('//evil.com/internal-quote')).toBe('/operations');
       expect(sanitizeRedirectUrl('//google.com')).toBe('/operations');
     });
 
-    it('6. Rejects javascript: and data: schemes', () => {
+    it('7. Rejects javascript: and data: schemes', () => {
       expect(sanitizeRedirectUrl('javascript:alert(1)')).toBe('/operations');
       expect(sanitizeRedirectUrl('data:text/html,<script>')).toBe('/operations');
+    });
+
+    it('8. Rejects encoded protocol-relative URLs', () => {
+      expect(sanitizeRedirectUrl('%2F%2Fevil.example')).toBe('/operations');
+      expect(sanitizeRedirectUrl('%2F%2Fevil.com%2Foperations')).toBe('/operations');
+    });
+
+    it('9. Rejects backslash-based URL variants', () => {
+      expect(sanitizeRedirectUrl('/\\evil.com')).toBe('/operations');
+      expect(sanitizeRedirectUrl('\\\\evil.example')).toBe('/operations');
+      expect(sanitizeRedirectUrl('/\\operations')).toBe('/operations');
+      expect(sanitizeRedirectUrl('\\operations')).toBe('/operations');
     });
   });
 
