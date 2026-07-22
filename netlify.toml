@@ -6,6 +6,10 @@
   NODE_VERSION = "20.18.0"
   GG_FEATURE_GHL_SYNC = "true"
   GG_FEATURE_META_CAPI = "true"
+  # SUPABASE_URL is intentionally public — same value as VITE_SUPABASE_URL
+  # which is embedded in the browser bundle by Supabase's design.
+  # The secret scanner flags it because both env vars share the same URL.
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL"
 
 
 [functions]
