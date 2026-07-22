@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-
 import { GHL_CONFIG } from './utils/ghlConfig.js';
+import { requireStaffAuth } from './utils/requireStaffAuth.js';
 
 // Environment Variables - SECRETS ONLY
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -22,7 +22,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, x-admin-secret',
+  'Access-Control-Allow-Headers': 'Content-Type, x-admin-secret, Authorization',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json',
 };
@@ -49,9 +49,19 @@ export const handler = async (event) => {
     debugLogs.push(line);
   };
 
+  // Dual Authorization: Staff Bearer JWT (Browser) OR Server-to-Server x-admin-secret (Queue Worker)
+  const authHeader = event.headers['authorization'] || event.headers['Authorization'];
   const adminSecret = event.headers['x-admin-secret'];
-  if (INTERNAL_ADMIN_SECRET && adminSecret !== INTERNAL_ADMIN_SECRET) {
-    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const authResult = await requireStaffAuth(event, { allowedRoles: ['owner_admin', 'staff'] });
+    if (!authResult.authorized) {
+      return { statusCode: authResult.statusCode || 401, headers, body: JSON.stringify({ error: authResult.error || 'Unauthorized staff session' }) };
+    }
+  } else if (INTERNAL_ADMIN_SECRET && adminSecret === INTERNAL_ADMIN_SECRET) {
+    // Authorized server-to-server call (e.g. process-crm-queue worker)
+  } else {
+    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized staff bearer authorization or valid server secret required' }) };
   }
 
   const { quoteData, customerData, internalQuoteId, action = 'sync' } = JSON.parse(event.body);

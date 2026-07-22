@@ -1,16 +1,10 @@
 /**
- * G&G Cleaning Services - Lead Capture Utility
- * Connects the frontend to durable lead persistence via a secure server-side function.
- * 
- * Phase 1: Routes through persist-lead.js for atomic Supabase persistence + CRM queue.
- * Legacy crm-proxy is retained as an emergency fallback only.
- * 
- * IMPORTANT: sendToCRM no longer fires window.fbq.
- * Each calling component is responsible for its own Meta pixel events
- * using trackConversion() from metaTracking.js with a shared meta_event_id.
+ * G&G Cleaning Services - Lead Capture & Staff Quote Utility
+ * Connects the frontend to durable lead persistence and staff quote management.
  */
 
 import { getFbp, getFbc } from './metaTracking';
+import { staffApiFetch } from '../lib/staffApiClient';
 
 /**
  * Sends lead or booking data to the durable persist-lead function.
@@ -21,11 +15,9 @@ import { getFbp, getFbc } from './metaTracking';
  * @returns {{ success: boolean, lead_id?: string, fallback?: boolean, error?: string }}
  */
 export const sendToCRM = async (data, type = 'lead_capture') => {
-    // 1. Meta CAPI Enrichment — attach browser cookies for server-side deduplication
     const fbp = data.fbp || getFbp();
     const fbc = data.fbc || getFbc();
 
-    // 2. Prepare Enriched Payload
     const payload = {
         ...data,
         "Full Name": data.name || (data.firstName ? `${data.firstName} ${data.lastName}` : data.contactName),
@@ -42,7 +34,6 @@ export const sendToCRM = async (data, type = 'lead_capture') => {
     };
 
     try {
-        // Route to durable persistence endpoint (Phase 1 transport)
         const response = await fetch('/.netlify/functions/persist-lead', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -55,16 +46,10 @@ export const sendToCRM = async (data, type = 'lead_capture') => {
         }
 
         console.log(`[CRM] Successfully sent ${type} event. Lead ID: ${result.lead_id || 'N/A'}`);
-
-        // NOTE: window.fbq is NOT called here.
-        // Each calling component handles its own Meta pixel events
-        // using trackConversion() with a shared meta_event_id.
-
         return { success: true, lead_id: result.lead_id, lead_uuid: result.lead_uuid };
     } catch (error) {
         console.error('[CRM] Error sending data to server, trying fallback:', error);
         
-        // Dynamic EmailJS fallback to prevent lead loss
         const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
         const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
         const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
@@ -114,40 +99,28 @@ Completed Answers:
             } catch (emailjsError) {
                 console.error('[CRM Fallback] EmailJS sending failed:', emailjsError);
             }
-        } else {
-            console.warn('[CRM Fallback] EmailJS environment variables are missing; cannot run fallback.');
         }
 
         return { success: false, error: error.message };
     }
 };
 
-
-// Maintain compatibility for older imports
 export const sendToGHL = sendToCRM;
 
 /**
- * Sends an internal staff quote to the robust GHL Sync service.
- * Authentication relies on the adminSecret passed from the UI (entered by staff).
+ * Sends an internal staff quote using verified staff Bearer JWT authorization.
  */
-export const sendInternalQuote = async (payload, adminSecret, internalQuoteId = null) => {
+export const sendInternalQuote = async (payload, _unusedSecret = null, internalQuoteId = null) => {
     const body = {
         ...payload,
         internalQuoteId: internalQuoteId || payload.internalQuoteId
     };
 
     try {
-        const response = await fetch('/.netlify/functions/ghl-sync', {
+        const result = await staffApiFetch('/.netlify/functions/ghl-sync', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'x-admin-secret': adminSecret
-            },
             body: JSON.stringify(body),
         });
-
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || `Sync error: ${response.status}`);
 
         return result;
     } catch (error) {
@@ -157,49 +130,31 @@ export const sendInternalQuote = async (payload, adminSecret, internalQuoteId = 
 };
 
 /**
- * Generates a branded document via backend.
- * Requires adminSecret from UI.
+ * Generates a branded document via backend using verified staff Bearer JWT authorization.
  */
-export const generateDocument = async (internalQuoteId, documentType, adminSecret) => {
-  const response = await fetch('/.netlify/functions/generate-document', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-admin-secret': adminSecret
-    },
-    body: JSON.stringify({ internalQuoteId, documentType })
-  });
-
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || 'Failed to generate document');
-  return data;
+export const generateDocument = async (internalQuoteId, documentType) => {
+    return await staffApiFetch('/.netlify/functions/generate-document', {
+        method: 'POST',
+        body: JSON.stringify({ internalQuoteId, documentType })
+    });
 };
 
 /**
- * Fetches a saved quote.
- * Requires adminSecret from UI.
+ * Fetches a saved quote using verified staff Bearer JWT authorization.
  */
-export const fetchQuote = async (internalQuoteId, adminSecret) => {
+export const fetchQuote = async (internalQuoteId) => {
     try {
-        const response = await fetch('/.netlify/functions/ghl-sync', {
+        const result = await staffApiFetch('/.netlify/functions/ghl-sync', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'x-admin-secret': adminSecret
-            },
             body: JSON.stringify({ 
                 internalQuoteId,
                 action: 'get_quote'
             }),
         });
 
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Failed to fetch quote');
         return result;
     } catch (error) {
         console.error('[CRM Utils] fetchQuote failed:', error);
         return { success: false, error: error.message };
     }
 };
-
-

@@ -11,11 +11,10 @@ import {
 import { calculateRecurringQuote, calculateCommercialQuote, getDistancePricing, ADDON_META_INTERNAL } from '../utils/pricingEngine';
 import { getZipDistance } from '../config/serviceZones';
 import { sendInternalQuote, generateDocument, fetchQuote } from '../utils/crm';
+import { useStaffAuth } from '../auth/StaffAuthProvider';
 import './InternalQuotePage.css';
 
 // Admin & Staff Configuration
-const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN || '4455'; 
-
 const ADMIN_OVERRIDE_CODES = {
     'ADMINOVERRIDE': { allowRushBypass: true, waiveRushFee: false, label: 'Admin Override' },
     'GRACEPRIORITY': { allowRushBypass: true, waiveRushFee: false, label: 'Grace Priority' },
@@ -62,9 +61,7 @@ const INITIAL_FORM = {
 };
 
 const InternalQuotePage = () => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [pin, setPin] = useState('');
-    const [pinError, setPinError] = useState(false);
+    const { staff } = useStaffAuth();
     const [form, setForm] = useState(INITIAL_FORM);
     const [isFieldMode, setIsFieldMode] = useState(false);
     const [estimate, setEstimate] = useState(null);
@@ -85,23 +82,6 @@ const InternalQuotePage = () => {
         proposal: { status: 'not_generated', url: null },
         agreement: { status: 'not_generated', url: null }
     });
-
-    // ── Authentication ────────────────────────────────────────────────────────
-    const handleLogin = (e) => {
-        if (e) e.preventDefault();
-        if (pin === ADMIN_PIN) {
-            setIsAuthenticated(true);
-            setPinError(false);
-        } else {
-            setPinError(true);
-            setPin('');
-        }
-    };
-
-    const handleLogout = () => {
-        setIsAuthenticated(false);
-        setPin('');
-    };
 
     // ── Logic Helpers ──────────────────────────────────────────────────────────
     const showToast = (msg, type = 'info') => {
@@ -281,7 +261,7 @@ const InternalQuotePage = () => {
             action: 'sync'
         };
 
-        const result = await sendInternalQuote(payload, pin, form.internalQuoteId);
+        const result = await sendInternalQuote(payload, null, form.internalQuoteId);
         
         if (result.success) {
             setSyncStatus({
@@ -333,7 +313,7 @@ const InternalQuotePage = () => {
         };
 
         try {
-            const result = await sendInternalQuote(payload, pin, form.internalQuoteId);
+            const result = await sendInternalQuote(payload, null, form.internalQuoteId);
             if (result.success) {
                 setForm(f => ({ ...f, internalQuoteId: result.internalQuoteId }));
                 if (result.proposal_pdf_url || result.agreement_url) {
@@ -388,7 +368,7 @@ const InternalQuotePage = () => {
         };
 
         showToast('Generating proposal...', 'info');
-        const result = await sendInternalQuote(payload, pin, form.internalQuoteId);
+        const result = await sendInternalQuote(payload, null, form.internalQuoteId);
         if (result.success) {
             showToast('Proposal triggered in GHL!', 'success');
             if (result.proposal_pdf_url) {
@@ -414,7 +394,7 @@ const InternalQuotePage = () => {
         }));
 
         try {
-            const result = await generateDocument(form.internalQuoteId, type, pin);
+            const result = await generateDocument(form.internalQuoteId, type);
 
             if (result.success) {
                 setDocStatus(prev => ({
@@ -442,7 +422,7 @@ const InternalQuotePage = () => {
         if (!searchId) return;
         setIsLoadingQuote(true);
         try {
-            const result = await fetchQuote(searchId.trim(), pin);
+            const result = await fetchQuote(searchId.trim());
             if (result.success) {
                 const quote = result.quote;
                 const payload = quote.quote_payload;
@@ -519,28 +499,6 @@ Balance: $${totals.balance} (Due day of cleaning)
     };
 
     // ── Rendering ─────────────────────────────────────────────────────────────
-    if (!isAuthenticated) {
-        return (
-            <div className="iq-pin-gate">
-                <form className="iq-pin-card" onSubmit={handleLogin}>
-                    <div className="iq-pin-logo">🧹</div>
-                    <h1 className="iq-pin-title">Staff Quote Desk</h1>
-                    <p className="iq-pin-sub">G&G Cleaning Services Internal Tool</p>
-                    <input 
-                        type="password" 
-                        className="iq-pin-input" 
-                        placeholder="Enter PIN"
-                        value={pin}
-                        onChange={(e) => setPin(e.target.value)}
-                        autoFocus
-                    />
-                    <button type="submit" className="iq-pin-btn">UNLOCK CONSOLE</button>
-                    {pinError && <div className="iq-pin-error">Invalid PIN. Access Denied.</div>}
-                </form>
-            </div>
-        );
-    }
-
     return (
         <div className={`iq-page ${isFieldMode ? 'field-mode' : 'office-mode'}`}>
             <header className="iq-topbar">
@@ -576,11 +534,11 @@ Balance: $${totals.balance} (Due day of cleaning)
                     </div>
 
                     <div className="iq-staff-identity">
-                        <span className="staff-name">Quoting as: {form.quotedBy === 'Other' ? form.otherStaff : form.quotedBy}</span>
+                        <span className="staff-name">Staff: {staff?.display_name || staff?.email || 'Authenticated Staff'} ({staff?.role || 'staff'})</span>
                         <span className="staff-status">● System Online</span>
                     </div>
 
-                    <button onClick={handleLogout} className="iq-logout-btn"><LogOut size={14} /></button>
+                    <button onClick={useStaffAuth().logout} className="iq-logout-btn" title="Sign Out"><LogOut size={14} /></button>
                 </div>
             </header>
 
