@@ -3,6 +3,7 @@
   publish = "dist"
 
 [build.environment]
+  NODE_VERSION = "20.18.0"
   GG_FEATURE_GHL_SYNC = "true"
   GG_FEATURE_META_CAPI = "true"
 
