@@ -2,12 +2,14 @@ import { createClient } from '@supabase/supabase-js';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { DOCUMENT_CONFIG, PROPOSAL_MAP, AGREEMENT_MAP } from './utils/documentCoordinateMaps.js';
 import { requireStaffAuth } from './utils/requireStaffAuth.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const getDirName = () => {
+  if (typeof __dirname !== 'undefined') return __dirname;
+  return process.cwd();
+};
+const __dir = getDirName();
 
 // Environment Variables
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -65,7 +67,7 @@ export const handler = async (event) => {
 
     // 2. Prepare PDF
     const templateName = documentType === 'proposal' ? 'proposal-blank.pdf' : 'agreement-blank.pdf';
-    const templatePath = path.join(__dirname, 'templates', templateName);
+    const templatePath = path.join(__dir, 'templates', templateName);
     
     if (!fs.existsSync(templatePath)) {
         throw new Error(`Template not found: ${templatePath}`);
