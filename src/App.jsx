@@ -16,6 +16,12 @@ import PromoBanner from './components/modular/PromoBanner';
 
 import SuccessPage from './pages/SuccessPage';
 
+// Staff Auth & Protected Route Architecture (Phase 3A)
+import { StaffAuthProvider } from './auth/StaffAuthProvider';
+import ProtectedStaffRoute from './auth/ProtectedStaffRoute';
+import StaffLoginPage from './pages/StaffLoginPage';
+import OperationsDashboardPage from './pages/OperationsDashboardPage';
+
 // Pages
 import HomePage from './pages/HomePage';
 import PricingPage from './pages/PricingPage';
@@ -42,7 +48,7 @@ function AppContent() {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [isEstimateOpen, setIsEstimateOpen] = useState(false);
   const location = useLocation();
-  const isInternalRoute = location.pathname === '/internal-quote';
+  const isStaffRoute = ['/internal-quote', '/staff-login', '/operations'].includes(location.pathname);
 
   // Source Tracking (Capture FB Ads Leads)
   React.useEffect(() => {
@@ -69,12 +75,13 @@ function AppContent() {
     <div className={`app-shell ${OFFERS.active ? 'has-promo' : ''}`} style={{ minHeight: '100vh', background: 'transparent' }}>
       <PromoBanner onOpenEstimate={() => setIsEstimateOpen(true)} />
       <Sparkles />
-      {!isInternalRoute && <Navbar onOpenEstimate={() => setIsEstimateOpen(true)} />}
+      {!isStaffRoute && <Navbar onOpenEstimate={() => setIsEstimateOpen(true)} />}
       <ScrollToTop />
-      {!isInternalRoute && <ChatWidget />}
+      {!isStaffRoute && <ChatWidget />}
       <main>
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
+            {/* Public Marketing Routes */}
             <Route path="/"           element={<HomePage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
             <Route path="/services"   element={<ServicesPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
             <Route path="/pricing"    element={<PricingPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
@@ -90,15 +97,33 @@ function AppContent() {
             {/* Tracking Success Pages */}
             <Route path="/booking-confirmed" element={<SuccessPage />} />
             <Route path="/quote-confirmed" element={<SuccessPage />} />
-            <Route path="/internal-quote" element={<InternalQuotePage />} />
+
+            {/* Staff Authentication & Operations Routes (Phase 3A) */}
+            <Route path="/staff-login" element={<StaffLoginPage />} />
+            <Route 
+              path="/operations" 
+              element={
+                <ProtectedStaffRoute allowedRoles={['owner_admin', 'staff']}>
+                  <OperationsDashboardPage />
+                </ProtectedStaffRoute>
+              } 
+            />
+            <Route 
+              path="/internal-quote" 
+              element={
+                <ProtectedStaffRoute allowedRoles={['owner_admin', 'staff']}>
+                  <InternalQuotePage />
+                </ProtectedStaffRoute>
+              } 
+            />
 
             {/* Fallback: redirect unknown routes to home */}
             <Route path="*"           element={<HomePage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
           </Routes>
         </Suspense>
       </main>
-      {!isInternalRoute && <Footer onOpenPrivacy={() => setIsPrivacyOpen(true)} onOpenTerms={() => setIsTermsOpen(true)} onOpenEstimate={() => setIsEstimateOpen(true)} />}
-      {!isInternalRoute && <StickyCTA onOpenEstimate={() => setIsEstimateOpen(true)} />}
+      {!isStaffRoute && <Footer onOpenPrivacy={() => setIsPrivacyOpen(true)} onOpenTerms={() => setIsTermsOpen(true)} onOpenEstimate={() => setIsEstimateOpen(true)} />}
+      {!isStaffRoute && <StickyCTA onOpenEstimate={() => setIsEstimateOpen(true)} />}
       
       <AnimatePresence>
         {isEstimateOpen && (
@@ -115,9 +140,11 @@ function AppContent() {
 function App() {
   return (
     <HelmetProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
+      <StaffAuthProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </StaffAuthProvider>
     </HelmetProvider>
   );
 }
