@@ -445,7 +445,16 @@ export const LOCATIONS = {
     headline: 'Reliable House Cleaning in Port Washington',
     subheadline: 'Port Washington residents trust G&G Cleaning for consistent, high-quality results. Whether you need a one-time deep clean or weekly service, we make it easy.',
     description: "Expert home cleaning in Port Washington, NY. Deep cleaning and recurring service options tailored to your lifestyle.",
-    faqs: []
+    faqs: [
+      {
+        question: "What cleaning packages are available for Port Washington homes?",
+        answer: "We offer tailored deep cleaning, bi-weekly maintenance, move-in/move-out cleaning, and eco-friendly options for all Port Washington waterfront and hillside residences."
+      },
+      {
+        question: "Are your cleaning teams insured and background-checked?",
+        answer: "Yes, 100% of our team members are fully background-checked, insured, and trained to respect your privacy and property."
+      }
+    ]
   },
   greatNeck: {
     name: 'Great Neck',
@@ -453,7 +462,16 @@ export const LOCATIONS = {
     headline: 'Great Neck’s Premier Cleaning Service',
     subheadline: 'Exceptional cleaning for Great Neck estates and residences. We provide a level of detail and reliability that stands out in the community.',
     description: "High-end house cleaning in Great Neck, NY. G&G Cleaning offers deep cleaning and recurring maintenance for discerning homeowners.",
-    faqs: []
+    faqs: [
+      {
+        question: "Do you service Great Neck Estates, Kings Point, and Saddle Rock?",
+        answer: "Yes, we regularly service homes throughout Great Neck including Kings Point, Saddle Rock, Great Neck Plaza, and Russell Gardens."
+      },
+      {
+        question: "Can I request pet-friendly and non-toxic cleaning products?",
+        answer: "Absolutely. We bring non-toxic, child-safe, and pet-friendly cleaning solutions for every job upon request at no extra charge."
+      }
+    ]
   },
   woodbury: {
     name: 'Woodbury',
@@ -461,7 +479,12 @@ export const LOCATIONS = {
     headline: 'Professional Maid Service in Woodbury',
     subheadline: 'Keep your Woodbury home beautiful with G&G Cleaning. Our professional teams are trained to deliver a spotless result every single time.',
     description: "Top-rated house cleaning in Woodbury, NY. Deep cleaning and weekly maid services available.",
-    faqs: []
+    faqs: [
+      {
+        question: "How do I schedule recurring weekly or bi-weekly cleaning in Woodbury?",
+        answer: "You can book directly using our instant online calculator or call our team at 516-298-8323 to lock in your preferred day and time slot."
+      }
+    ]
   },
   melville: {
     name: 'Melville',
@@ -469,7 +492,12 @@ export const LOCATIONS = {
     headline: 'Melville Home Cleaning You Can Count On',
     subheadline: 'G&G Cleaning provides Melville homeowners with a stress-free cleaning experience. Reliable, professional, and thorough.',
     description: "Reliable residential cleaning in Melville, NY. We offer deep cleaning and recurring maintenance services.",
-    faqs: []
+    faqs: [
+      {
+        question: "Do you offer commercial or office cleaning in Melville?",
+        answer: "Yes, in addition to luxury residential homes, we offer tailored commercial and office cleaning solutions along the Melville corporate corridor."
+      }
+    ]
   },
   commack: {
     name: 'Commack',
@@ -477,7 +505,12 @@ export const LOCATIONS = {
     headline: 'Commack’s Local House Cleaning Team',
     subheadline: 'Quality cleaning services right in your neighborhood. Commack families trust G&G Cleaning for all their home maintenance needs.',
     description: "Professional house cleaning in Commack, NY. G&G Cleaning offers reliable deep cleaning and recurring maid services.",
-    faqs: []
+    faqs: [
+      {
+        question: "What is your 24-Hour Satisfaction Guarantee?",
+        answer: "If you aren't completely happy with any area cleaned in your Commack home, let us know within 24 hours and we'll re-clean it free of charge."
+      }
+    ]
   },
   smithtown: {
     name: 'Smithtown',
@@ -485,7 +518,12 @@ export const LOCATIONS = {
     headline: 'Expert House Cleaning in Smithtown',
     subheadline: 'G&G Cleaning brings over 15 years of experience to Smithtown homes. Let our family take care of yours with a premium clean.',
     description: "Trusted home cleaning in Smithtown, NY. Deep cleaning and recurring service options for all Smithtown residents.",
-    faqs: []
+    faqs: [
+      {
+        question: "Do you clean homes in Nesconset, St. James, and Hauppauge?",
+        answer: "Yes, we serve the broader Smithtown area including Nesconset, St. James, San Remo, and Hauppauge."
+      }
+    ]
   }
 };
 

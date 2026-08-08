@@ -6,6 +6,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import emailjs from '@emailjs/browser';
 import { calculateRecurringQuote, ADDON_META, getDistancePricing, formatCurrency } from '../utils/pricingEngine.js';
 import { getZipDistance } from '../config/serviceZones';
+import { qualifyServiceZip } from '../utils/zipValidation.js';
 import CheckoutForm from './CheckoutForm';
 import PhotoQuoteFlow from './PhotoQuoteFlow';
 import { sendToCRM } from '../utils/crm';
@@ -252,7 +253,14 @@ const EstimateWidget = ({ onClose, inline = false }) => {
     const [step, setStep] = useState(0);
     const [direction, setDirection] = useState(1);
     
+    // Service Area Guardrail state
+    const [showOutOfAreaModal, setShowOutOfAreaModal] = useState(false);
+    const [outOfAreaDetails, setOutOfAreaDetails] = useState({ zipCode: '', status: '', placeName: '', state: '' });
+    const [waitlistInput, setWaitlistInput] = useState({ email: '', phone: '' });
+    const [waitlistStatus, setWaitlistStatus] = useState('idle'); // idle | submitting | submitted
+
     // Parse URL params for prefilling
+
     const searchParams = new URLSearchParams(window.location.search);
     const prefName = searchParams.get('fname') || '';
     const prefPhone = searchParams.get('phone') || '';
@@ -354,7 +362,23 @@ const EstimateWidget = ({ onClose, inline = false }) => {
         if (step === 0) {
             setIsCalculating(true);
             try {
+                const zipCheck = qualifyServiceZip(form.zipCode);
+                
+                // Guardrail: Block out-of-area ZIP codes from advancing
+                if (!zipCheck.isServiceable) {
+                    setOutOfAreaDetails({
+                        zipCode: zipCheck.normalizedZip || form.zipCode,
+                        status: zipCheck.status,
+                        county: zipCheck.county,
+                        marketArea: zipCheck.marketArea
+                    });
+                    setShowOutOfAreaModal(true);
+                    setIsCalculating(false);
+                    return;
+                }
+
                 const zipData = await getZipDistance(form.zipCode);
+
                 const result = calculateRecurringQuote({
                     bedrooms: form.bedrooms,
                     bathrooms: form.bathrooms,
@@ -1091,6 +1115,94 @@ const EstimateWidget = ({ onClose, inline = false }) => {
                     <div className="ew-social-pulse" />
                     <span><strong>12 people</strong> booked a cleaning in Huntington this week</span>
                 </div>
+
+                {showOutOfAreaModal && (
+                    <div className="ew-modal-overlay" style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem'
+                    }}>
+                        <div className="ew-modal-card" style={{
+                            background: '#ffffff', borderRadius: '16px', maxWidth: '480px', width: '100%',
+                            padding: '2rem', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', textAlign: 'center'
+                        }}>
+                            <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📍</div>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1a202c', marginBottom: '0.5rem' }}>
+                                Outside Active Service Area
+                            </h3>
+                            <p style={{ fontSize: '0.95rem', color: '#4a5568', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                                We currently serve homes and businesses across Nassau and Suffolk counties on Long Island. Try another ZIP or ask to be notified if we expand to your area.
+                            </p>
+
+                            {waitlistStatus === 'submitted' ? (
+                                <div style={{ background: '#f0fff4', color: '#276749', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', fontWeight: 600 }}>
+                                    ✅ Thank you! You've been added to our service expansion waitlist.
+                                </div>
+                            ) : (
+                                <div style={{ background: '#f7fafc', padding: '1rem', borderRadius: '12px', marginBottom: '1.25rem', textAlign: 'left' }}>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#2d3748', marginBottom: '0.5rem' }}>
+                                        Notify me when service expands to my area:
+                                    </label>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <input 
+                                            type="email" 
+                                            placeholder="Your Email Address"
+                                            value={waitlistInput.email}
+                                            onChange={(e) => setWaitlistInput({ ...waitlistInput, email: e.target.value })}
+                                            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '0.9rem' }}
+                                        />
+                                        <label style={{ fontSize: '0.78rem', color: '#718096', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                            <input type="checkbox" defaultChecked readOnly /> I agree to receive marketing updates regarding service expansion.
+                                        </label>
+                                        <button
+                                            onClick={async () => {
+                                                if (!waitlistInput.email) return;
+                                                setWaitlistStatus('submitting');
+                                                try {
+                                                    await fetch('/.netlify/functions/submit-waitlist', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            email: waitlistInput.email,
+                                                            zipCode: outOfAreaDetails.zipCode,
+                                                            marketingConsent: true
+                                                        })
+                                                    });
+                                                } catch (err) {
+                                                    console.warn('Waitlist sync error:', err);
+                                                }
+                                                setWaitlistStatus('submitted');
+                                            }}
+                                            disabled={!waitlistInput.email || waitlistStatus === 'submitting'}
+                                            style={{
+                                                background: 'var(--color-primary, #0f2b48)', color: '#fff', padding: '8px 16px',
+                                                borderRadius: '6px', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: '0.88rem'
+                                            }}
+                                        >
+                                            {waitlistStatus === 'submitting' ? 'Submitting…' : 'Notify Me If Service Expands →'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                                <button 
+                                    onClick={() => {
+                                        setShowOutOfAreaModal(false);
+                                        setWaitlistStatus('idle');
+                                        setForm((f) => ({ ...f, zipCode: '' }));
+                                    }}
+                                    style={{
+                                        background: '#0f2b48', color: '#ffffff', border: 'none', padding: '10px 18px',
+                                        borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem'
+                                    }}
+                                >
+                                    🔄 Try Another ZIP
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </motion.div>
         </div>
     );

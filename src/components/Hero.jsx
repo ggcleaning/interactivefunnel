@@ -26,7 +26,7 @@ const Hero = ({ onOpenEstimate }) => {
                     className="badge"
                 >
                     <CheckCircle2 size={16} color="var(--color-accent)" />
-                    <span>#1 Rated Cleaning Service on Long Island</span>
+                    <span>📍 Serving Nassau & Suffolk Counties, Long Island</span>
                 </motion.div>
 
                 <motion.h1

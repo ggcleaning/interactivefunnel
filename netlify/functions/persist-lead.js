@@ -1,4 +1,5 @@
 import { getSupabaseClient } from './utils/supabaseClient.js';
+import { qualifyServiceZip } from '../../src/utils/zipValidation.js';
 import crypto from 'crypto';
 
 // ---------------------------------------------------------------------------
@@ -157,6 +158,24 @@ export const handler = async (event) => {
                 body: JSON.stringify({
                     success: false,
                     error: 'At least one contact field (email or phone) is required'
+                })
+            };
+        }
+
+        // Server-Authoritative ZIP Enforcement
+        const zipCode = data.zipCode || data.zip_code || data.zip || '';
+        const zipCheck = qualifyServiceZip(zipCode);
+        if (!zipCheck.isServiceable) {
+            console.warn(`[persist-lead] Rejected out-of-area lead request. ZIP: "${zipCode}", Status: ${zipCheck.status}, Reason: ${zipCheck.internalReason}`);
+            return {
+                statusCode: 422,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({
+                    success: false,
+                    error: 'OUTSIDE_SERVICE_AREA',
+                    code: 'OUTSIDE_SERVICE_AREA',
+                    message: 'We currently serve homes and businesses across Nassau and Suffolk counties on Long Island. Try another ZIP or ask to be notified if we expand to your area.',
+                    details: { normalizedZip: zipCheck.normalizedZip, status: zipCheck.status, isServiceable: zipCheck.isServiceable }
                 })
             };
         }
@@ -360,3 +379,4 @@ export const handler = async (event) => {
         };
     }
 };
+

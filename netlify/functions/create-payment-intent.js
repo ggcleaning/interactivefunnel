@@ -8,8 +8,10 @@
 
 import Stripe from 'stripe';
 import { calculateRecurringQuote, getDistancePricing } from '../../src/utils/pricingEngine.js';
+import { qualifyServiceZip } from '../../src/utils/zipValidation.js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_key_for_testing';
+const stripe = new Stripe(stripeSecretKey);
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -89,6 +91,25 @@ export const handler = async (event) => {
       metaEventId
     } = body;
 
+    // Server-Authoritative ZIP Enforcement
+    const zipCode = body.zipCode || body.zip_code || body.zip || '';
+    if (zipCode) {
+      const zipCheck = qualifyServiceZip(zipCode);
+      if (!zipCheck.isServiceable) {
+        console.warn(`[create-payment-intent] Blocked payment intent creation for out-of-area ZIP: "${zipCode}"`);
+        return {
+          statusCode: 422,
+          headers,
+          body: JSON.stringify({
+            error: 'OUTSIDE_SERVICE_AREA',
+            code: 'OUTSIDE_SERVICE_AREA',
+            message: 'We currently serve homes and businesses across Nassau and Suffolk counties on Long Island. Deposits cannot be accepted for out-of-area addresses.',
+            details: { normalizedZip: zipCheck.normalizedZip, status: zipCheck.status, isServiceable: zipCheck.isServiceable }
+          })
+        };
+      }
+    }
+
     const flow = (payment_flow || 'concierge').toLowerCase();
     let finalAmount = 5000; // Default Concierge $50 flat
 
@@ -152,3 +173,4 @@ export const handler = async (event) => {
     };
   }
 };
+

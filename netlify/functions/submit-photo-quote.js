@@ -10,6 +10,7 @@
 // ============================================================
 
 import nodemailer from 'nodemailer';
+import { qualifyServiceZip } from '../../src/utils/zipValidation.js';
 
 const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -24,7 +25,25 @@ export const handler = async (event) => {
 
     try {
         const body = JSON.parse(event.body);
-        const { name, email, phone, address, serviceType, estimateRange, images = {} } = body;
+        const { name, email, phone, address, serviceType, estimateRange, zipCode, zip, images = {} } = body;
+
+        // Server-Authoritative ZIP Enforcement
+        const rawZip = zipCode || zip || (address ? address.match(/\b\d{5}\b/)?.[0] : '');
+        if (rawZip) {
+            const zipCheck = qualifyServiceZip(rawZip);
+            if (!zipCheck.isServiceable) {
+                return {
+                    statusCode: 422,
+                    headers,
+                    body: JSON.stringify({
+                        error: 'OUTSIDE_SERVICE_AREA',
+                        code: 'OUTSIDE_SERVICE_AREA',
+                        message: 'Photo quotes are currently available for Nassau and Suffolk County addresses only.',
+                        details: { normalizedZip: zipCheck.normalizedZip, status: zipCheck.status, isServiceable: zipCheck.isServiceable }
+                    })
+                };
+            }
+        }
 
         // Build image HTML for the email body
         const imgSection = (label, urls = []) => {
@@ -84,3 +103,4 @@ export const handler = async (event) => {
         return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
     }
 };
+

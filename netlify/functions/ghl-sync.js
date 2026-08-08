@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { GHL_CONFIG } from './utils/ghlConfig.js';
 import { requireStaffAuth } from './utils/requireStaffAuth.js';
+import { qualifyServiceZip } from '../../src/utils/zipValidation.js';
 
 // Environment Variables - SECRETS ONLY
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -18,7 +19,9 @@ const GHL_CUSTOM_FIELD_AGREEMENT_URL = process.env.GHL_CUSTOM_FIELD_AGREEMENT_UR
 const GHL_CUSTOM_FIELD_PROPOSAL_STATUS = process.env.GHL_CUSTOM_FIELD_PROPOSAL_STATUS || GHL_CONFIG.CUSTOM_FIELDS.PROPOSAL_STATUS;
 const GHL_CUSTOM_FIELD_AGREEMENT_STATUS = process.env.GHL_CUSTOM_FIELD_AGREEMENT_STATUS || GHL_CONFIG.CUSTOM_FIELDS.AGREEMENT_STATUS;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const supabase = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : null;
 
 const headers = {
   'Access-Control-Allow-Origin': '*',
@@ -53,18 +56,41 @@ export const handler = async (event) => {
   const authHeader = event.headers['authorization'] || event.headers['Authorization'];
   const adminSecret = event.headers['x-admin-secret'];
 
+  const internalSecret = process.env.INTERNAL_ADMIN_SECRET;
+
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const authResult = await requireStaffAuth(event, { allowedRoles: ['owner_admin', 'staff'] });
     if (!authResult.authorized) {
       return { statusCode: authResult.statusCode || 401, headers, body: JSON.stringify({ error: authResult.error || 'Unauthorized staff session' }) };
     }
-  } else if (INTERNAL_ADMIN_SECRET && adminSecret === INTERNAL_ADMIN_SECRET) {
+  } else if (internalSecret && adminSecret === internalSecret) {
     // Authorized server-to-server call (e.g. process-crm-queue worker)
   } else {
     return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized staff bearer authorization or valid server secret required' }) };
   }
 
-  const { quoteData, customerData, internalQuoteId, action = 'sync' } = JSON.parse(event.body);
+  const { quoteData, customerData, internalQuoteId, action = 'sync' } = JSON.parse(event.body || '{}');
+
+  // Server-Authoritative ZIP Enforcement
+  if (action === 'sync') {
+    const zipCode = customerData?.zipCode || customerData?.zip || quoteData?.zipCode || quoteData?.zip || '';
+    if (zipCode) {
+      const zipCheck = qualifyServiceZip(zipCode);
+      if (!zipCheck.isServiceable) {
+        console.warn(`[ghl-sync] Blocked GHL sync for out-of-area ZIP: "${zipCode}"`);
+        return {
+          statusCode: 422,
+          headers,
+          body: JSON.stringify({
+            error: 'OUTSIDE_SERVICE_AREA',
+            code: 'OUTSIDE_SERVICE_AREA',
+            message: 'We currently serve homes and businesses across Nassau and Suffolk counties on Long Island.',
+            details: { normalizedZip: zipCheck.normalizedZip, status: zipCheck.status, isServiceable: zipCheck.isServiceable }
+          })
+        };
+      }
+    }
+  }
 
   // 0. Get Quote Action
   if (action === 'get_quote') {
@@ -119,7 +145,8 @@ export const handler = async (event) => {
         return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: "GHL Connected" }) };
       } else {
         const err = await ghlRes.json();
-        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: "GHL Connection Failed", details: err }) };
+        console.error('[ghl-sync] GHL health-check failed:', JSON.stringify(err));
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: "GHL Connection Failed", ghlStatus: ghlRes.status }) };
       }
     } catch (error) {
       return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: error.message }) };
@@ -480,3 +507,4 @@ async function createAuditLog(entityType, entityId, internalQuoteId, action, det
     console.error('Failed to create audit log:', e);
   }
 }
+

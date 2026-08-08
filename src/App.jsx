@@ -91,6 +91,7 @@ function AppContent() {
             <Route path="/commercial-intake" element={<CommercialQuotePage />} />
             <Route path="/quote"      element={<QuotePage />} />
             <Route path="/locations/:slug" element={<LocationPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
+            <Route path="/cleaning-services/:slug" element={<LocationPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
             <Route path="/services/deep-cleaning-checklist" element={<DeepCleanChecklistPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
             <Route path="/reviews" element={<ClientStoriesPage onOpenEstimate={() => setIsEstimateOpen(true)} />} />
             

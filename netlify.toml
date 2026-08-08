@@ -14,7 +14,7 @@
 
 [functions]
   directory = "netlify/functions"
-  node_bundler = "esbuild"
+  # node_bundler = "esbuild"
   # Bundling mode: esbuild packages required dependencies including @supabase/supabase-js
 
 [dev]
@@ -31,6 +31,20 @@
 [functions."process-crm-queue"]
   schedule = "*/15 * * * *"
 
+# Legacy route redirects (301)
+[[redirects]]
+  from = "/locations/:slug"
+  to = "/cleaning-services/:slug"
+  status = 301
+  force = true
+
+# Location 404 fallback for unknown town slugs
+[[redirects]]
+  from = "/cleaning-services/*"
+  to = "/404.html"
+  status = 404
+
+# SPA wildcard fallback
 [[redirects]]
   from = "/*"
   to = "/index.html"

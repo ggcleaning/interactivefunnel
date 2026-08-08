@@ -54,6 +54,21 @@
   gap: 6px;
 }
 
+.navbar-geo-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 5px 12px;
+  border-radius: 20px;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
 .navbar-link {
   font-size: 0.90rem;
   font-weight: 600;

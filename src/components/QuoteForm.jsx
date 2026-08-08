@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, MapPin, Calendar, CheckCircle2 } from 'lucide-react';
+import { Send, MapPin, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import { BUSINESS } from '../data/config';
 import { sendToCRM } from '../utils/crm';
 import { trackConversion } from '../utils/metaTracking';
+import { qualifyServiceZip } from '../utils/zipValidation.js';
 import './Contact.css';
 
 const QuoteForm = () => {
@@ -38,10 +39,21 @@ const QuoteForm = () => {
         setError('');
 
         try {
+            // Service Area ZIP Qualification Check
+            if (formData.zipCode) {
+                const zipCheck = qualifyServiceZip(formData.zipCode);
+                if (!zipCheck.isServiceable) {
+                    setLoading(false);
+                    setError(`We currently serve homes and businesses across Nassau and Suffolk counties on Long Island. Try another ZIP or ask to be notified if we expand to your area.`);
+                    return;
+                }
+            }
+
             // EmailJS configuration
             const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
             const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
             const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+
 
             // Check if environment variables are set and log them for debugging (obfuscated)
             if (!serviceId || !templateId || !publicKey) {

@@ -37,6 +37,9 @@ const Navbar = () => {
         ) : (
           <>
             <div className={`navbar-links${mobileOpen ? ' navbar-links--open' : ''}`}>
+              <div className="navbar-geo-pill">
+                📍 Serving Nassau & Suffolk Counties, Long Island
+              </div>
               {NAV_LINKS.map((link) => (
                 <NavLink
                   key={link.path}

@@ -1,129 +1,245 @@
-import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
-import { LOCATIONS, BUSINESS } from '../data/config';
-import HeroTemplate from '../components/modular/HeroTemplate';
-import TrustBar from '../components/modular/TrustBar';
-import CTABanner from '../components/modular/CTABanner';
-import FAQSection from '../components/modular/FAQSection';
-import { trackEvent } from '../utils/analytics';
+import React, { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { LOCATION_DATA } from '../data/locationData';
+import { getLocationSchemas } from '../utils/seoSchemas';
+import SEOHead from '../components/SEOHead';
+import EstimateWidget from '../components/EstimateWidget';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import { 
+  MapPin, 
+  CheckCircle2, 
+  Sparkles, 
+  ArrowRight, 
+  ShieldCheck, 
+  Star, 
+  Home,
+  HelpCircle,
+  PhoneCall
+} from 'lucide-react';
+import { BUSINESS } from '../data/config';
+import './LocationPage.css';
 
-/**
- * LocationPage - Reusable template for all town-specific landing pages.
- * Pulls data dynamically from the LOCATIONS config.
- */
-const LocationPage = ({ onOpenEstimate }) => {
+const LocationPage = () => {
   const { slug } = useParams();
-  const navigate = useNavigate();
+  const location = LOCATION_DATA[slug?.toLowerCase()];
+  const [showWidgetModal, setShowWidgetModal] = useState(false);
 
-  // Find the location data by slug (mapping kebab-case to camelCase if needed)
-  const locationKey = Object.keys(LOCATIONS).find(
-    key => key.toLowerCase() === slug.replace(/-/g, '').toLowerCase()
-  );
-  
-  const location = LOCATIONS[locationKey];
+  // Handle 404 for unknown town slugs
+  if (!location) {
+    return (
+      <div className="location-404-wrapper">
+        <SEOHead
+          title="Town Not Found | G&G Cleaning Services"
+          description="The requested service area page could not be found. G&G Cleaning Services serves all of Nassau and Suffolk County on Long Island."
+        />
+        <Navbar />
+        <main className="location-404-container">
+          <div className="location-404-card">
+            <span className="location-404-icon">📍</span>
+            <h1>Location Page Not Found</h1>
+            <p>We couldn't find a dedicated landing page for <code>/{slug}</code>, but G&G Cleaning Services proudly serves all homes and businesses across <strong>Nassau and Suffolk Counties</strong> on Long Island!</p>
+            
+            <div className="location-404-actions">
+              <Link to="/" className="btn-primary">
+                Return to Homepage
+              </Link>
+            </div>
 
-  useEffect(() => {
-    if (!location) {
-      // If location doesn't exist, redirect to home
-      navigate('/', { replace: true });
-      return;
-    }
+            <div className="location-404-active-towns">
+              <h3>Explore Our Primary Service Areas:</h3>
+              <div className="active-towns-grid">
+                {Object.values(LOCATION_DATA).map((loc) => (
+                  <Link key={loc.slug} to={`/cleaning-services/${loc.slug}`} className="town-link-chip">
+                    📍 {loc.name}, NY
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
-    // Track page view for this specific location
-    trackEvent('location_page_view', {
-      location: location.name,
-      slug: slug
-    });
-
-    window.scrollTo(0, 0);
-  }, [location, slug, navigate]);
-
-  if (!location) return null;
-
-  // Personalized CTA handler that passes the area to the funnel
-  const handleCtaClick = () => {
-    trackEvent('location_cta_click', {
-      location: location.name,
-      type: 'primary'
-    });
-    
-    // Store selected area in session for the funnel to pick up
-    sessionStorage.setItem('preferred_area', location.name);
-    
-    // Open the estimate widget
-    onOpenEstimate();
-  };
-
-  // Generate Local Business Schema for this specific town
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "CleaningService",
-    "name": `${BUSINESS.name} - ${location.name}`,
-    "description": location.description,
-    "url": `${BUSINESS.website}/locations/${slug}`,
-    "telephone": BUSINESS.phone,
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": location.name,
-      "addressRegion": "NY",
-      "addressCountry": "US"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": location.name
-    },
-    "provider": {
-      "@type": "LocalBusiness",
-      "name": BUSINESS.name,
-      "image": `${BUSINESS.website}/logo.png`
-    }
-  };
+  const canonicalUrl = `https://ggcleaningli.com/cleaning-services/${location.slug}`;
+  const pageSchemas = getLocationSchemas(location);
 
   return (
-    <div className="location-page">
-      <Helmet>
-        <title>{location.headline} | {BUSINESS.name}</title>
-        <meta name="description" content={location.description} />
-        <link rel="canonical" href={`${BUSINESS.website}/locations/${slug}`} />
-        <script type="application/ld+json">
-          {JSON.stringify(schema)}
-        </script>
-      </Helmet>
-
-      <HeroTemplate 
-        badge={`${location.county} County’s #1 Rated Cleaners`}
-        headline={location.headline}
-        subheadline={location.subheadline}
-        primaryCta={{
-          label: `Get a Quote for ${location.name}`,
-          onClick: handleCtaClick
-        }}
-        secondaryCta={{
-          label: "View Pricing",
-          onClick: () => navigate('/pricing')
-        }}
-        bgImage="/images/hero-clean.jpg"
+    <div className="location-page-wrapper">
+      <SEOHead
+        title={location.metaTitle}
+        description={location.metaDescription}
+        canonicalUrl={canonicalUrl}
+        schemas={pageSchemas}
       />
 
-      <TrustBar items={BUSINESS.trustBadges} />
+      <Navbar />
 
-      {/* Town-Specific FAQ Section */}
-      {location.faqs && location.faqs.length > 0 && (
-        <FAQSection 
-          title={`Frequently Asked Questions in ${location.name}`}
-          items={location.faqs}
-        />
+      <main>
+        {/* HERO SECTION */}
+        <section className="location-hero">
+          <div className="location-hero-container">
+            <div className="location-hero-content">
+              <div className="location-badge">
+                <MapPin className="icon-sm" />
+                <span>{location.name}, NY — {location.county} County</span>
+              </div>
+              
+              <h1>{location.h1}</h1>
+              
+              <p className="location-hero-intro">{location.intro}</p>
+
+              <div className="location-hero-cta-group">
+                <button 
+                  className="btn-location-primary"
+                  onClick={() => setShowWidgetModal(true)}
+                >
+                  <Sparkles className="icon-sm" />
+                  Calculate {location.name} Quote Instant →
+                </button>
+                <a href={`tel:${BUSINESS.phone}`} className="btn-location-secondary">
+                  <PhoneCall className="icon-sm" />
+                  Call {BUSINESS.phone}
+                </a>
+              </div>
+
+              <div className="location-trust-bar">
+                <div className="trust-item"><ShieldCheck className="trust-icon" /> Fully Insured & Bonded</div>
+                <div className="trust-item"><Star className="trust-icon" /> 5.0 Star Rated on Google</div>
+                <div className="trust-item"><Home className="trust-icon" /> Serving Long Island Since 2008</div>
+              </div>
+            </div>
+
+            <div className="location-hero-widget-preview">
+              <div className="widget-preview-card">
+                <h3>Get an Instant Price in {location.name}</h3>
+                <p>Select your home size and get a guaranteed price quote in under 60 seconds.</p>
+                <button 
+                  className="widget-preview-btn"
+                  onClick={() => setShowWidgetModal(true)}
+                >
+                  Launch Instant Price Calculator
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* HOUSING CONTEXT SECTION */}
+        <section className="location-section housing-section">
+          <div className="section-container">
+            <div className="section-header">
+              <h2>Tailored Cleaning for {location.name} Homes</h2>
+              <p>{location.housingContext}</p>
+            </div>
+
+            <div className="highlights-grid">
+              {location.localHighlights.map((highlight, idx) => (
+                <div key={idx} className="highlight-card">
+                  <CheckCircle2 className="highlight-icon" />
+                  <span>{highlight}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* POPULAR SERVICES */}
+        <section className="location-section services-section">
+          <div className="section-container">
+            <div className="section-header">
+              <h2>Popular Cleaning Packages in {location.name}</h2>
+              <p>Choose the ideal cleaning schedule for your home and lifestyle.</p>
+            </div>
+
+            <div className="services-grid">
+              {location.popularServices.map((srv, idx) => (
+                <div key={idx} className="service-card">
+                  <div className="service-card-header">
+                    <Sparkles className="service-icon" />
+                    <h3>{srv.title}</h3>
+                  </div>
+                  <p>{srv.desc}</p>
+                  <button 
+                    className="service-card-btn"
+                    onClick={() => setShowWidgetModal(true)}
+                  >
+                    Select Package <ArrowRight className="icon-xs" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* TESTIMONIAL */}
+        {location.testimonial && (
+          <section className="location-section testimonial-section">
+            <div className="section-container">
+              <div className="testimonial-card">
+                <div className="stars-row">★★★★★</div>
+                <p className="quote">"{location.testimonial.quote}"</p>
+                <div className="author">— {location.testimonial.author}, {location.testimonial.area}</div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* LOCAL FAQS */}
+        <section className="location-section faqs-section">
+          <div className="section-container">
+            <div className="section-header">
+              <h2><HelpCircle className="inline-icon" /> Frequently Asked Questions in {location.name}</h2>
+            </div>
+
+            <div className="faqs-list">
+              {location.localFaqs.map((faq, idx) => (
+                <div key={idx} className="faq-item">
+                  <h4>{faq.q}</h4>
+                  <p>{faq.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* NEARBY TOWNS (CRAWLABLE INTERNAL LINKS) */}
+        <section className="location-section nearby-section">
+          <div className="section-container">
+            <h3>Nearby Long Island Communities We Serve</h3>
+            <div className="nearby-towns-flex">
+              {location.nearbyTowns.map((townName, idx) => {
+                const matchedSlug = Object.keys(LOCATION_DATA).find(
+                  (s) => LOCATION_DATA[s].name.toLowerCase() === townName.toLowerCase()
+                );
+                return matchedSlug ? (
+                  <Link key={idx} to={`/cleaning-services/${matchedSlug}`} className="nearby-town-link">
+                    📍 {townName}, NY
+                  </Link>
+                ) : (
+                  <span key={idx} className="nearby-town-tag">
+                    📍 {townName}, NY
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+
+      {/* ESTIMATE WIDGET MODAL */}
+      {showWidgetModal && (
+        <div className="location-widget-modal-backdrop" onClick={() => setShowWidgetModal(false)}>
+          <div className="location-widget-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={() => setShowWidgetModal(false)}>✕</button>
+            <EstimateWidget onClose={() => setShowWidgetModal(false)} />
+          </div>
+        </div>
       )}
-
-      <CTABanner 
-        headline={`Ready for a Spotless ${location.name} Home?`}
-        sub="Join hundreds of satisfied Long Island homeowners who trust G&G Cleaning for their weekly and bi-weekly needs."
-        primaryCta={{
-          label: `Get My ${location.name} Quote`,
-          onClick: handleCtaClick
-        }}
-      />
     </div>
   );
 };

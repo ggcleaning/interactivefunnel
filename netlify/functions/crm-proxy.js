@@ -1,4 +1,6 @@
 
+import { qualifyServiceZip } from '../../src/utils/zipValidation.js';
+
 export const handler = async (event) => {
     // CORS headers
     const headers = {
@@ -17,7 +19,27 @@ export const handler = async (event) => {
     }
 
     try {
-        const { data, type } = JSON.parse(event.body);
+        const { data = {}, type } = JSON.parse(event.body || '{}');
+
+        // Server-Authoritative ZIP Qualification Check
+        const zipCode = data.zipCode || data.zip_code || data.zip || '';
+        if (zipCode) {
+            const zipCheck = qualifyServiceZip(zipCode);
+            if (!zipCheck.isServiceable) {
+                console.warn(`[crm-proxy] Rejected out-of-area CRM proxy submission for ZIP "${zipCode}"`);
+                return {
+                    statusCode: 422,
+                    headers,
+                    body: JSON.stringify({
+                        success: false,
+                        error: 'OUTSIDE_SERVICE_AREA',
+                        code: 'OUTSIDE_SERVICE_AREA',
+                        message: 'We currently serve homes and businesses across Nassau and Suffolk counties on Long Island.',
+                        details: { normalizedZip: zipCheck.normalizedZip, status: zipCheck.status, isServiceable: zipCheck.isServiceable }
+                    })
+                };
+            }
+        }
 
         // Fetch Webhook URLs from SERVER-SIDE environment variables
         // (No VITE_ prefix = not baked into frontend JS)
@@ -88,3 +110,4 @@ export const handler = async (event) => {
         };
     }
 };
+
